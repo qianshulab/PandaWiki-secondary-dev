@@ -14,11 +14,9 @@ import {
   Tooltip,
   Zoom,
 } from '@mui/material';
-import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
-const DocFab = () => {
-  const { id: docId } = useParams() || {};
+const DocFab = ({ docId }: { docId?: string }) => {
   const { kbDetail, mobile } = useStore();
   const [showActions, setShowActions] = useState(false);
   const [contentType, setContentType] = useState<'html' | 'md'>('html');

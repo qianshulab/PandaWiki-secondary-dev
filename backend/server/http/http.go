@@ -65,6 +65,10 @@ func NewEcho(
 
 	e.Binder = &MyBinder{}
 
+	e.GET("/healthz", func(c echo.Context) error {
+		return c.NoContent(http.StatusOK)
+	})
+
 	if os.Getenv("ENV") == "local" {
 		e.Debug = true
 		e.GET("/swagger/*", echoSwagger.WrapHandler)

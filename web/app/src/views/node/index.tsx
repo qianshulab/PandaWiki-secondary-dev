@@ -119,7 +119,7 @@ const Doc = ({
             />
           )}
           {!mobile && <DocAnchor headings={headings} />}
-          <DocFab />
+          <DocFab docId={node?.id} />
           {!mobile && <ScrollToTopFab />}
         </>
       )}
