@@ -182,6 +182,8 @@ services:
     command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
     ports:
       - "80:80"
+      - "443:443"
+      - "8011:8011"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-run:/app/run
@@ -338,6 +340,8 @@ services:
         VERSION: "production"
     container_name: pandawiki-prod-consumer
     restart: unless-stopped
+    volumes:
+      - caddy-run:/app/run
     depends_on:
       pandawiki-api:
         condition: service_healthy

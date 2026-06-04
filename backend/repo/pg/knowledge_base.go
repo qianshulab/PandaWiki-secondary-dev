@@ -310,6 +310,9 @@ func (r *KnowledgeBaseRepository) SyncKBAccessSettingsToCaddy(ctx context.Contex
 		}
 	}
 	config := map[string]any{
+		"admin": map[string]any{
+			"listen": "unix/" + socketPath,
+		},
 		"apps": apps,
 	}
 	newBody, _ := json.Marshal(config)
@@ -322,7 +325,10 @@ func (r *KnowledgeBaseRepository) SyncKBAccessSettingsToCaddy(ctx context.Contex
 		Transport: tr,
 		Timeout:   5 * time.Second,
 	}
-	req, err := http.NewRequest("POST", "http://unix/load", bytes.NewBuffer(newBody))
+	// Caddy's admin endpoint validates the HTTP Host header even when it is
+	// reached through a Unix domain socket. Use an allowed loopback host while
+	// the custom transport below still dials the configured socket path.
+	req, err := http.NewRequest("POST", "http://127.0.0.1/load", bytes.NewBuffer(newBody))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

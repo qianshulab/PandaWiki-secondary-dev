@@ -27,6 +27,7 @@ docker compose -f deploy/production/docker-compose.yml up -d --build
 | API | `http://127.0.0.1:8000` | 后端接口与 MCP |
 | MCP | `http://127.0.0.1:8000/mcp` | 与文档一致 |
 | Caddy（Wiki 站点） | `http://127.0.0.1:80` | 由 KB 的 `access_settings.port`/`base_url` 决定路由 |
+| Caddy（自定义 Wiki 端口） | `http://127.0.0.1:8011` | 本地验收已发布；其他自定义端口需同步增加 compose 端口映射 |
 | MinIO API | `http://127.0.0.1:9000` | 文件存储 |
 | MinIO Console | `http://127.0.0.1:9001` | 可选管理 |
 | PostgreSQL | `127.0.0.1:5432` | 数据库 |
@@ -65,7 +66,9 @@ QDRANT_API_KEY
 - `RAG_CT_RAG_BASE_URL=http://172.30.0.18:5050`
   - API/Consumer 同步模型、创建知识库 dataset、文档向量化、AI 搜索/问答均依赖此真实 RAGLite 地址。
 - `CADDY_API=/app/run/caddy-admin.sock`
-  - 挂载共享卷 `caddy-run`，API socket 供后台同步 KB 路由。
+  - 挂载共享卷 `caddy-run`，API/Consumer 均可通过 socket 同步 KB 路由。
+  - 代码通过 Unix Socket 调用 Caddy Admin API 时使用 `Host: 127.0.0.1`，避免 Caddy 拒绝 `host not allowed: unix`。
+  - 动态下发 Caddy JSON 配置时保留 `admin.listen=unix//app/run/caddy-admin.sock`，避免 `/load` 后 Admin API 回落到 `localhost:2019` 导致后续同步失败。
 - `CADDY_ADMIN` 未对外暴露，仅由 API 内网写入。
 
 ## 5. 生产启动后的验收清单
