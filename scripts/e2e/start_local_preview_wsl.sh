@@ -105,6 +105,46 @@ print(kbs[0]["id"])
 PY
 }
 
+configure_preview_wiki_url() {
+  local kb_id="$1"
+  API_URL="$API_URL" ADMIN_PASSWORD="$ADMIN_PASSWORD" DEV_KB_ID="$kb_id" APP_URL="$APP_URL" python3 <<'PY'
+import json
+import os
+import urllib.request
+
+base = os.environ["API_URL"].rstrip("/")
+password = os.environ["ADMIN_PASSWORD"]
+kb_id = os.environ["DEV_KB_ID"]
+app_url = os.environ["APP_URL"].rstrip("/")
+
+def request(path, data=None, token=None, method=None):
+    headers = {"Content-Type": "application/json"}
+    if token:
+        headers["Authorization"] = "Bearer " + token
+    body = json.dumps(data).encode() if data is not None else None
+    req = urllib.request.Request(
+        base + path,
+        data=body,
+        headers=headers,
+        method=method or ("POST" if data is not None else "GET"),
+    )
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        return json.loads(resp.read().decode())
+
+token = request("/api/v1/user/login", {"account": "admin", "password": password})["data"]["token"]
+detail = request(f"/api/v1/knowledge_base/detail?id={kb_id}", token=token)["data"]
+access_settings = detail.get("access_settings") or {}
+access_settings["base_url"] = app_url
+request(
+    "/api/v1/knowledge_base/detail",
+    {"id": kb_id, "access_settings": access_settings},
+    token=token,
+    method="PUT",
+)
+print(app_url)
+PY
+}
+
 cd "$ROOT"
 mkdir -p "$RUNTIME_DIR" "$ROOT/reports"
 
@@ -139,6 +179,7 @@ wait_url "${BASE_URL%/}/login" "Admin preview"
 wait_url "${API_URL%/}/mcp" "Backend API"
 
 DEV_KB_ID="$(resolve_dev_kb_id)"
+configure_preview_wiki_url "$DEV_KB_ID" >/dev/null
 log "start wiki app preview: $APP_URL -> backend $API_URL, kb_id=$DEV_KB_ID"
 kill_old_wiki_app
 (

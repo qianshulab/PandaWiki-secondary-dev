@@ -98,7 +98,7 @@ wsl -d Ubuntu-22.04 -u root -- /bin/bash "/mnt/d/AI WorkSpace/PandaWiki/scripts/
 wsl -d Ubuntu-22.04 -- bash -lc "cd '/mnt/d/AI WorkSpace/PandaWiki' && ./scripts/e2e/start_local_preview_wsl.sh"
 ```
 
-访问地址：Admin `http://127.0.0.1:5173/login`，Wiki `http://127.0.0.1:3010/node`，账号 `admin`，密码 `PandaWiki_E2E_123456`。Windows 侧访问 MCP/API 建议使用 `http://localhost:8000/mcp`。
+访问地址：Admin `http://127.0.0.1:5173/login`，Wiki `http://127.0.0.1:3010/node`，账号 `admin`，密码 `PandaWiki_E2E_123456`。预览脚本会将知识库 `base_url` 设置为 `http://127.0.0.1:3010`，因此后台“访问 Wiki 网站”按钮也会跳转到 3010。Windows 侧访问 MCP/API 建议使用 `http://localhost:8000/mcp`。
 
 如需要重新安装 Playwright Linux 系统依赖：
 

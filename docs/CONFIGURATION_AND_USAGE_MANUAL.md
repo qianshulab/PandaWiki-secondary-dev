@@ -138,6 +138,8 @@ FEATURE_POLICY_ALLOW_VISITOR_PERMISSION_CONTROL=true
 http://<wiki-domain>/node/<node_id>
 ```
 
+Admin 顶部“访问 Wiki 网站”按钮读取知识库 `access_settings.base_url`。本地预览脚本会自动把该值设置为 `http://127.0.0.1:3010`，所以从后台点击访问 Wiki 时应跳转到 3010 端口；生产环境请在知识库访问配置中设置正式域名或 `base_url`。
+
 ## 5. MCP Server 使用
 
 当前 MCP 是只读检索能力，适合让外部 AI 客户端查询 PandaWiki 知识库。它不会创建、修改或发布文档。
