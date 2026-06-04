@@ -300,7 +300,7 @@ const Header = ({
                 textSx: { flex: 1 },
                 label: (
                   <StyledMenuSelect disabled={!allowDocHistory}>
-                    ????
+                    历史版本
                     {!allowDocHistory && (
                       <VersionCanUse permission={BUSINESS_VERSION_PERMISSION} />
                     )}

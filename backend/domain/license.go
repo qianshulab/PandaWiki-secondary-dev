@@ -21,9 +21,9 @@ type BaseEditionLimitation struct {
 	AllowOpenAIBotSettings        bool  `json:"allow_open_ai_bot_settings"`       // 支持问答机器人
 	AllowMCPServer                bool  `json:"allow_mcp_server"`                 // 支持创建MCP Server
 	AllowNodeStats                bool  `json:"allow_node_stats"`                 // 支持文档统计
-	AllowDocHistory               bool  `json:"allow_doc_history"`                // ????????
-	AllowContribution             bool  `json:"allow_contribution"`               // ????????
-	AllowVisitorPermissionControl bool  `json:"allow_visitor_permission_control"` // ????????
+	AllowDocHistory               bool  `json:"allow_doc_history"`                // 支持文档历史版本
+	AllowContribution             bool  `json:"allow_contribution"`               // 支持用户贡献
+	AllowVisitorPermissionControl bool  `json:"allow_visitor_permission_control"` // 支持访客权限控制
 }
 
 var baseEditionLimitationDefault = BaseEditionLimitation{
