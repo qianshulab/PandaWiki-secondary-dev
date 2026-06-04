@@ -28,7 +28,7 @@ WORKDIR /app
 
 RUN apk add --no-cache libc6-compat
 
-COPY --from=0 /workspace/app/dist/standalone/app ./app
+COPY --from=0 /workspace/app/dist/standalone ./
 COPY --from=0 /workspace/app/dist/static ./app/dist/static
 COPY --from=0 /workspace/app/public ./app/public
 
