@@ -46,7 +46,7 @@ func (r *NodeRepository) Create(ctx context.Context, req *domain.CreateNodeReq, 
 			Count(&count).Error; err != nil {
 			return err
 		}
-		if count >= int64(req.MaxNode) {
+		if req.MaxNode > 0 && count >= int64(req.MaxNode) {
 			return domain.ErrMaxNodeLimitReached
 		}
 		var maxPos float64

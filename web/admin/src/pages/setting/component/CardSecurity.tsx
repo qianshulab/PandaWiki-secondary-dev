@@ -8,7 +8,7 @@ import {
 } from '@/request/types';
 import { useAppSelector } from '@/store';
 import { message } from '@ctzhian/ui';
-import { BUSINESS_VERSION_PERMISSION } from '@/constant/version';
+import { BUSINESS_VERSION_PERMISSION, PROFESSION_VERSION_PERMISSION } from '@/constant/version';
 import {
   Autocomplete,
   Box,
@@ -158,7 +158,7 @@ const KeywordsForm = ({ kb }: { kb: DomainKnowledgeBaseDetail }) => {
   });
 
   useEffect(() => {
-    if (!kb.id || !BUSINESS_VERSION_PERMISSION.includes(license.edition!))
+    if (!kb.id || !PROFESSION_VERSION_PERMISSION.includes(license.edition!))
       return;
     getApiProV1Block({ kb_id: kb.id! }).then(res => {
       setValue('block_words', res.words || []);
@@ -169,7 +169,7 @@ const KeywordsForm = ({ kb }: { kb: DomainKnowledgeBaseDetail }) => {
     <SettingCardItem title='内容合规' isEdit={isEdit} onSubmit={onSubmit}>
       <FormItem
         vertical
-        permission={BUSINESS_VERSION_PERMISSION}
+        permission={PROFESSION_VERSION_PERMISSION}
         label='屏蔽 AI 问答中的关键字'
       >
         <Controller

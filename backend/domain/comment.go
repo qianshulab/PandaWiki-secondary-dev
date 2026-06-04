@@ -89,6 +89,11 @@ type DeleteCommentListReq struct {
 	IDS []string `json:"ids" query:"ids"`
 }
 
+type CommentModerateReq struct {
+	IDS    []string      `json:"ids" validate:"required"`
+	Status CommentStatus `json:"status"`
+}
+
 type ShareCommentListItem struct {
 	ID        string         `json:"id" gorm:"primaryKey"`
 	KbID      string         `json:"kb_id"`

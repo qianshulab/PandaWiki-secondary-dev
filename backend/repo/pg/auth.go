@@ -300,8 +300,9 @@ func (r *AuthRepo) GetOrCreateAuth(ctx context.Context, auth *domain.Auth, sourc
 					return err
 				}
 
-				if int(count) >= domain.GetBaseEditionLimitation(ctx).MaxSSOUser {
-					return fmt.Errorf("exceed max auth limit for kb %s, current count: %d, max limit: %d", auth.KBID, count, domain.GetBaseEditionLimitation(ctx).MaxSSOUser)
+				limitation := domain.GetBaseEditionLimitation(ctx)
+				if limitation.MaxSSOUser > 0 && int(count) >= limitation.MaxSSOUser {
+					return fmt.Errorf("exceed max auth limit for kb %s, current count: %d, max limit: %d", auth.KBID, count, limitation.MaxSSOUser)
 				}
 
 				auth.LastLoginTime = time.Now()

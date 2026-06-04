@@ -88,7 +88,7 @@ func (r *StatRepository) GetConversationDistributionOneHour(ctx context.Context,
 }
 
 func (r *StatRepository) GetHotRefererHostOneHour(ctx context.Context, kbID string) (map[string]int64, error) {
-	var hotRefererHosts []*domain.HotRefererHost
+	hotRefererHosts := make([]*domain.HotRefererHost, 0)
 	if err := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ?", kbID).
 		Where("created_at >= ? AND created_at < ?", utils.GetTimeHourOffset(-1), utils.GetTimeHourOffset(0)).
@@ -183,7 +183,7 @@ func (r *StatRepository) CleanupOldHourlyStats(ctx context.Context) error {
 }
 
 func (r *StatRepository) GetHotPagesOneHour(ctx context.Context, kbID string) (map[string]int64, error) {
-	var hotPages []*domain.HotPage
+	hotPages := make([]*domain.HotPage, 0)
 	if err := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ?", kbID).
 		Where("node_id != '' ").
@@ -228,7 +228,7 @@ func (r *StatRepository) GetHotPagesByHour(ctx context.Context, kbID string, sta
 }
 
 func (r *StatRepository) GetHotBrowsersOneHour(ctx context.Context, kbID string) (map[string]int64, error) {
-	var browserCount []domain.BrowserCount
+	browserCount := make([]domain.BrowserCount, 0)
 
 	query := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ?", kbID).
@@ -251,7 +251,7 @@ func (r *StatRepository) GetHotBrowsersOneHour(ctx context.Context, kbID string)
 }
 
 func (r *StatRepository) GetHotOSOneHour(ctx context.Context, kbID string) (map[string]int64, error) {
-	var osCount []domain.BrowserCount
+	osCount := make([]domain.BrowserCount, 0)
 
 	query := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ?", kbID).
@@ -287,7 +287,7 @@ func (r *StatRepository) GetStatPageCountByHour(ctx context.Context, kbID string
 
 func (r *StatRepository) GetHotBrowsersByHour(ctx context.Context, kbID string, startHour int64) (*domain.HotBrowser, error) {
 
-	var browserCount []domain.BrowserCount
+	browserCount := make([]domain.BrowserCount, 0)
 	query := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ?", kbID).
 		Where("created_at > ?", utils.GetTimeHourOffset(-24)).
@@ -298,7 +298,7 @@ func (r *StatRepository) GetHotBrowsersByHour(ctx context.Context, kbID string, 
 		return nil, err
 	}
 
-	var osCount []domain.BrowserCount
+	osCount := make([]domain.BrowserCount, 0)
 	query = r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ?", kbID).
 		Where("created_at > ?", utils.GetTimeHourOffset(-24)).

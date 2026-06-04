@@ -9,18 +9,19 @@ import (
 )
 
 type Config struct {
-	Log           LogConfig    `mapstructure:"log"`
-	HTTP          HTTPConfig   `mapstructure:"http"`
-	AdminPassword string       `mapstructure:"admin_password"`
-	PG            PGConfig     `mapstructure:"pg"`
-	MQ            MQConfig     `mapstructure:"mq"`
-	RAG           RAGConfig    `mapstructure:"rag"`
-	Redis         RedisConfig  `mapstructure:"redis"`
-	Auth          AuthConfig   `mapstructure:"auth"`
-	S3            S3Config     `mapstructure:"s3"`
-	Sentry        SentryConfig `mapstructure:"sentry"`
-	CaddyAPI      string       `mapstructure:"caddy_api"`
-	SubnetPrefix  string       `mapstructure:"subnet_prefix"`
+	Log           LogConfig           `mapstructure:"log"`
+	HTTP          HTTPConfig          `mapstructure:"http"`
+	AdminPassword string              `mapstructure:"admin_password"`
+	PG            PGConfig            `mapstructure:"pg"`
+	MQ            MQConfig            `mapstructure:"mq"`
+	RAG           RAGConfig           `mapstructure:"rag"`
+	Redis         RedisConfig         `mapstructure:"redis"`
+	Auth          AuthConfig          `mapstructure:"auth"`
+	S3            S3Config            `mapstructure:"s3"`
+	Sentry        SentryConfig        `mapstructure:"sentry"`
+	CaddyAPI      string              `mapstructure:"caddy_api"`
+	SubnetPrefix  string              `mapstructure:"subnet_prefix"`
+	FeaturePolicy FeaturePolicyConfig `mapstructure:"feature_policy"`
 }
 
 type LogConfig struct {
@@ -130,8 +131,9 @@ func NewConfig() (*Config, error) {
 			Enabled: true,
 			DSN:     "https://2a4cff1ae04b624ffc72663f523024ff@sentry.baizhi.cloud/4",
 		},
-		CaddyAPI:     "/app/run/caddy-admin.sock",
-		SubnetPrefix: "169.254.15",
+		CaddyAPI:      "/app/run/caddy-admin.sock",
+		SubnetPrefix:  "169.254.15",
+		FeaturePolicy: DefaultFeaturePolicyConfig(),
 	}
 
 	viper.AddConfigPath(".")
@@ -224,6 +226,7 @@ func overrideWithEnv(c *Config) {
 			fmt.Fprintf(os.Stderr, "Invalid log level: %s with err: %s\n", env, err)
 		}
 	}
+	c.FeaturePolicy.OverrideWithEnv()
 }
 
 func (*Config) GetString(key string) string {

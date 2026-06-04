@@ -166,7 +166,7 @@ func (u *StatUseCase) GetHotRefererHosts(ctx context.Context, kbID string, day c
 		}
 
 		// 转换 map 为 slice 并排序
-		var hotRefererHosts []*domain.HotRefererHost
+		hotRefererHosts := make([]*domain.HotRefererHost, 0, len(refererHostMap))
 		for host, count := range refererHostMap {
 			hotRefererHosts = append(hotRefererHosts, &domain.HotRefererHost{
 				RefererHost: host,
@@ -370,7 +370,7 @@ func (u *StatUseCase) GetConversationDistribution(ctx context.Context, kbID stri
 		distributions = append(distributions, *dist)
 	}
 
-	var resp []v1.StatConversationDistributionResp
+	resp := make([]v1.StatConversationDistributionResp, 0, len(distributions))
 	if err := copier.Copy(&resp, distributions); err != nil {
 		return nil, fmt.Errorf("copy distributions to resp failed: %w", err)
 	}

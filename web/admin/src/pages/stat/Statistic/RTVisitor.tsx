@@ -22,7 +22,7 @@ const RTVisitor = ({ isWideScreen }: { isWideScreen: boolean }) => {
   useEffect(() => {
     if (kb_id) {
       getApiV1StatInstantPages({ kb_id }).then(res => {
-        setPages(res as StatInstantPageItme[]);
+        setPages((res || []) as StatInstantPageItme[]);
       });
       getApiV1StatInstantCount({ kb_id }).then(res => {
         const stats = ((res || []) as any[]).map(it => ({

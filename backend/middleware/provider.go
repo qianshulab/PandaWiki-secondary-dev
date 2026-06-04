@@ -7,4 +7,5 @@ var ProviderSet = wire.NewSet(
 	NewShareAuthMiddleware,
 	NewReadonlyMiddleware,
 	NewSessionMiddleware,
+	NewFeaturePolicyMiddleware,
 )

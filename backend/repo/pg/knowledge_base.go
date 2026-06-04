@@ -359,7 +359,7 @@ func (r *KnowledgeBaseRepository) CreateKnowledgeBase(ctx context.Context, maxKB
 			Find(&kbs).Error; err != nil {
 			return err
 		}
-		if len(kbs) > maxKB {
+		if maxKB > 0 && len(kbs) > maxKB {
 			return errors.New("kb is too many")
 		}
 

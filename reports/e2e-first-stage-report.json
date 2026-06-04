@@ -1,0 +1,52 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "passed": 9,
+  "failed": 0,
+  "results": [
+    {
+      "name": "license/feature_policy",
+      "status": "PASS",
+      "elapsed_ms": 0
+    },
+    {
+      "name": "users over free admin limit",
+      "status": "PASS",
+      "elapsed_ms": 146
+    },
+    {
+      "name": "knowledge bases over free limit + admin permission split",
+      "status": "PASS",
+      "elapsed_ms": 28
+    },
+    {
+      "name": "nodes over 300 free limit",
+      "status": "PASS",
+      "elapsed_ms": 1722
+    },
+    {
+      "name": "custom prompt get/put",
+      "status": "PASS",
+      "elapsed_ms": 5
+    },
+    {
+      "name": "block words get/post",
+      "status": "PASS",
+      "elapsed_ms": 3
+    },
+    {
+      "name": "api token CRUD",
+      "status": "PASS",
+      "elapsed_ms": 14
+    },
+    {
+      "name": "comment moderate endpoint",
+      "status": "PASS",
+      "elapsed_ms": 2
+    },
+    {
+      "name": "7-day statistics permission",
+      "status": "PASS",
+      "elapsed_ms": 5
+    }
+  ]
+}

@@ -31,6 +31,9 @@ func NewCommentHandler(e *echo.Echo, baseHandler *handler.BaseHandler, logger *l
 	group.GET("", h.GetCommentModeratedList)
 	group.DELETE("/list", h.DeleteCommentList)
 
+	proGroup := e.Group("/api/pro/v1/comment_moderate", h.auth.Authorize, h.auth.ValidateUserRole(consts.UserRoleAdmin))
+	proGroup.POST("", h.ModerateCommentList)
+
 	return h
 }
 
@@ -88,5 +91,20 @@ func (h *CommentHandler) DeleteCommentList(c echo.Context) error {
 	}
 
 	// success
+	return h.NewResponseWithData(c, nil)
+}
+
+func (h *CommentHandler) ModerateCommentList(c echo.Context) error {
+	var req domain.CommentModerateReq
+	if err := c.Bind(&req); err != nil {
+		return h.NewResponseWithError(c, "bind request", err)
+	}
+	if err := c.Validate(&req); err != nil {
+		return h.NewResponseWithError(c, "invalid request", err)
+	}
+
+	if err := h.usecase.ModerateCommentList(c.Request().Context(), &req); err != nil {
+		return h.NewResponseWithError(c, "failed to moderate comment list", err)
+	}
 	return h.NewResponseWithData(c, nil)
 }

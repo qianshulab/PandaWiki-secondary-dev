@@ -20,7 +20,7 @@ const ClientStat = ({ tab }: { tab: ActiveTab }) => {
     if (!kb_id) return;
     getApiV1StatBrowsers({ kb_id, day: tab }).then(res => {
       setOsList(
-        (res.os || [])
+        (res?.os || [])
           .sort((a, b) => b.count! - a.count!)
           .slice(0, 5)
           .map((it, idx) => ({
@@ -30,7 +30,7 @@ const ClientStat = ({ tab }: { tab: ActiveTab }) => {
           })),
       );
       setBrowserList(
-        (res.browser || [])
+        (res?.browser || [])
           .sort((a, b) => b.count! - a.count!)
           .slice(0, 5)
           .map((it, idx) => ({

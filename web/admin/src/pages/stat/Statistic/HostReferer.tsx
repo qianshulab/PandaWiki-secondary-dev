@@ -15,9 +15,11 @@ const HostReferer = ({ tab }: { tab: ActiveTab }) => {
   useEffect(() => {
     if (!kb_id) return;
     getApiV1StatRefererHosts({ kb_id, day: tab }).then(res => {
-      const data = res.sort((a, b) => b.count! - a.count!).slice(0, 7);
+      const data = [...(res || [])]
+        .sort((a, b) => b.count! - a.count!)
+        .slice(0, 7);
       setList(data);
-      setMax(Math.max(...data.map(item => item.count!)));
+      setMax(data.length ? Math.max(...data.map(item => item.count!)) : 0);
     });
   }, [tab, kb_id]);
 

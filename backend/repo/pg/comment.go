@@ -91,3 +91,13 @@ func (r *CommentRepository) DeleteCommentList(ctx context.Context, commentID []s
 	}
 	return nil
 }
+
+func (r *CommentRepository) ModerateCommentList(ctx context.Context, commentIDs []string, status domain.CommentStatus) error {
+	if len(commentIDs) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).
+		Model(&domain.Comment{}).
+		Where("id IN (?)", commentIDs).
+		Update("status", status).Error
+}

@@ -30,7 +30,7 @@ func (r *StatRepository) CreateStatPage(ctx context.Context, stat *domain.StatPa
 }
 
 func (r *StatRepository) GetHotPages(ctx context.Context, kbID string) ([]*domain.HotPage, error) {
-	var hotPages []*domain.HotPage
+	hotPages := make([]*domain.HotPage, 0)
 	if err := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ?", kbID).
 		Where("node_id != '' ").
@@ -46,7 +46,7 @@ func (r *StatRepository) GetHotPages(ctx context.Context, kbID string) ([]*domai
 }
 
 func (r *StatRepository) GetHotPagesNoLimit(ctx context.Context, kbID string) ([]*domain.HotPage, error) {
-	var hotPages []*domain.HotPage
+	hotPages := make([]*domain.HotPage, 0)
 	if err := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ?", kbID).
 		Where("node_id != '' ").
@@ -74,7 +74,7 @@ func (r *StatRepository) GetHotScene(ctx context.Context, kbID string) (map[doma
 }
 
 func (r *StatRepository) GetHotRefererHosts(ctx context.Context, kbID string) ([]*domain.HotRefererHost, error) {
-	var hotRefererHosts []*domain.HotRefererHost
+	hotRefererHosts := make([]*domain.HotRefererHost, 0)
 	if err := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ? AND referer_host != ?", kbID, "").
 		Group("referer_host").
@@ -89,8 +89,8 @@ func (r *StatRepository) GetHotRefererHosts(ctx context.Context, kbID string) ([
 
 func (r *StatRepository) GetHotBrowsers(ctx context.Context, kbID string) (*domain.HotBrowser, error) {
 	var hotBrowsers *domain.HotBrowser
-	var osCount []domain.BrowserCount
-	var browserCount []domain.BrowserCount
+	osCount := make([]domain.BrowserCount, 0)
+	browserCount := make([]domain.BrowserCount, 0)
 
 	query := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ?", kbID).
@@ -130,7 +130,7 @@ func (r *StatRepository) GetStatPageCount(ctx context.Context, kbID string) (*v1
 }
 
 func (r *StatRepository) GetInstantCount(ctx context.Context, kbID string) ([]*domain.InstantCountResp, error) {
-	var instantCount []*domain.InstantCountResp
+	instantCount := make([]*domain.InstantCountResp, 0)
 	if err := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ? AND created_at >= NOW() - INTERVAL '1h'", kbID).
 		Select("date_trunc('minute', created_at) as time, COUNT(*) as count").
@@ -143,7 +143,7 @@ func (r *StatRepository) GetInstantCount(ctx context.Context, kbID string) ([]*d
 }
 
 func (r *StatRepository) GetInstantPages(ctx context.Context, kbID string) ([]*domain.InstantPageResp, error) {
-	var instantPages []*domain.InstantPageResp
+	instantPages := make([]*domain.InstantPageResp, 0)
 	if err := r.db.WithContext(ctx).Model(&domain.StatPage{}).
 		Where("kb_id = ?", kbID).
 		Select("node_id, ip, scene, created_at,user_id").

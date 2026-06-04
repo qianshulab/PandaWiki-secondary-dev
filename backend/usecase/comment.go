@@ -168,6 +168,10 @@ func (u *CommentUsecase) DeleteCommentList(ctx context.Context, req *domain.Dele
 	return nil
 }
 
+func (u *CommentUsecase) ModerateCommentList(ctx context.Context, req *domain.CommentModerateReq) error {
+	return u.CommentRepo.ModerateCommentList(ctx, req.IDS, req.Status)
+}
+
 func maskIP(ip string) string {
 	if ip == "" {
 		return ""

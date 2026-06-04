@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/chaitin/panda-wiki/domain"
 	"github.com/chaitin/panda-wiki/log"
@@ -24,6 +26,61 @@ func NewPromptRepo(db *pg.DB, logger *log.Logger) *PromptRepo {
 		db:     db,
 		logger: logger,
 	}
+}
+
+func (r *PromptRepo) GetPrompt(ctx context.Context, kbID string) (*domain.Prompt, error) {
+	var setting domain.Setting
+	var prompt domain.Prompt
+	err := r.db.WithContext(ctx).Table("settings").
+		Where("kb_id = ? AND key = ?", kbID, domain.SettingKeySystemPrompt).
+		First(&setting).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &domain.Prompt{
+				Content:                  "",
+				SummaryContent:           domain.SystemDefaultSummaryPrompt,
+				EnablePresetAutoLanguage: true,
+				EnablePresetGeneralInfo:  true,
+				EnablePresetReference:    true,
+			}, nil
+		}
+		return nil, err
+	}
+
+	if err := json.Unmarshal(setting.Value, &prompt); err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(prompt.SummaryContent) == "" {
+		prompt.SummaryContent = domain.SystemDefaultSummaryPrompt
+	}
+	return &prompt, nil
+}
+
+func (r *PromptRepo) UpsertPrompt(ctx context.Context, kbID string, prompt *domain.Prompt) error {
+	if strings.TrimSpace(prompt.SummaryContent) == "" {
+		prompt.SummaryContent = domain.SystemDefaultSummaryPrompt
+	}
+	value, err := json.Marshal(prompt)
+	if err != nil {
+		return err
+	}
+
+	setting := domain.Setting{
+		KBID:        kbID,
+		Key:         domain.SettingKeySystemPrompt,
+		Value:       value,
+		Description: "system prompt",
+		UpdatedAt:   time.Now(),
+	}
+
+	return r.db.WithContext(ctx).Table("settings").Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "kb_id"}, {Name: "key"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"value",
+			"description",
+			"updated_at",
+		}),
+	}).Create(&setting).Error
 }
 
 func (r *PromptRepo) GetPromptContent(ctx context.Context, kbID string) (string, error) {

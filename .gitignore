@@ -33,3 +33,15 @@ local
 
 .idea
 __debug*
+
+# Local E2E automation runtime artifacts
+.e2e-runtime/
+reports/ui-e2e-screenshots/
+reports/ui-e2e-trace/
+reports/ui-e2e-video/
+
+# Keep the lightweight PandaWiki E2E compose fixture versioned.
+!deploy/
+deploy/*
+!deploy/e2e/
+!deploy/e2e/**

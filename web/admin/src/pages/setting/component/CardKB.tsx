@@ -42,7 +42,6 @@ import AddRole from './AddRole';
 import { Form, FormItem, SettingCardItem } from './Common';
 import {
   PROFESSION_VERSION_PERMISSION,
-  BUSINESS_VERSION_PERMISSION,
 } from '@/constant/version';
 
 type ApiTokenPermission =
@@ -75,8 +74,8 @@ const ApiToken = () => {
       perm: ConstsUserKBPermission.UserKBPermissionFullControl,
     },
   });
-  const isBusiness = useMemo(() => {
-    return BUSINESS_VERSION_PERMISSION.includes(license.edition!);
+  const canUseApiToken = useMemo(() => {
+    return PROFESSION_VERSION_PERMISSION.includes(license.edition!);
   }, [license]);
 
   const onDeleteApiToken = (id: string, name: string) => {
@@ -137,9 +136,9 @@ const ApiToken = () => {
   };
 
   useEffect(() => {
-    if (!kb_id || !isBusiness) return;
+    if (!kb_id || !canUseApiToken) return;
     getApiTokenList();
-  }, [kb_id, isBusiness]);
+  }, [kb_id, canUseApiToken]);
 
   useEffect(() => {
     if (!addOpen) reset();
@@ -148,7 +147,7 @@ const ApiToken = () => {
   return (
     <SettingCardItem
       title='API Token'
-      permission={BUSINESS_VERSION_PERMISSION}
+      permission={PROFESSION_VERSION_PERMISSION}
       extra={
         <Stack direction={'row'} alignItems={'center'}>
           <Button
@@ -227,7 +226,7 @@ const ApiToken = () => {
                 size='small'
                 sx={{ width: 120 }}
                 value={it.permission}
-                disabled={!isBusiness || user.role !== 'admin'}
+                disabled={!canUseApiToken || user.role !== 'admin'}
                 onChange={e =>
                   onUpdateApiToken(it.id!, e.target.value as ApiTokenPermission)
                 }
@@ -254,7 +253,7 @@ const ApiToken = () => {
                   kbDetail?.perm !==
                   ConstsUserKBPermission.UserKBPermissionFullControl
                     ? '权限不足'
-                    : '商业版可用'
+                    : '专业版可用'
                 }
                 placement='top'
                 arrow
@@ -265,7 +264,7 @@ const ApiToken = () => {
                     fontSize: 14,
                     ml: 1,
                     visibility:
-                      !isBusiness ||
+                      !canUseApiToken ||
                       kbDetail?.perm !==
                         ConstsUserKBPermission.UserKBPermissionFullControl
                         ? 'visible'
@@ -280,13 +279,13 @@ const ApiToken = () => {
                 sx={{
                   fontSize: 16,
                   cursor:
-                    !isBusiness ||
+                    !canUseApiToken ||
                     kbDetail?.perm !==
                       ConstsUserKBPermission.UserKBPermissionFullControl
                       ? 'not-allowed'
                       : 'pointer',
                   color:
-                    !isBusiness ||
+                    !canUseApiToken ||
                     kbDetail?.perm !==
                       ConstsUserKBPermission.UserKBPermissionFullControl
                       ? 'text.disabled'
@@ -294,7 +293,7 @@ const ApiToken = () => {
                 }}
                 onClick={() => {
                   if (
-                    !isBusiness ||
+                    !canUseApiToken ||
                     kbDetail?.perm !==
                       ConstsUserKBPermission.UserKBPermissionFullControl
                   )

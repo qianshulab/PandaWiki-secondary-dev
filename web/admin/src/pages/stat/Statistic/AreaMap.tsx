@@ -16,7 +16,7 @@ const AreaMap = ({ tab }: { tab: ActiveTab }) => {
   useEffect(() => {
     if (!kb_id) return;
     getApiV1StatGeoCount({ kb_id, day: tab }).then(res => {
-      const list = Object.entries(res as Record<string, number>)
+      const list = Object.entries((res || {}) as Record<string, number>)
         .map(([key, value]) => {
           const [country, province, city] = key.split('|');
           return {

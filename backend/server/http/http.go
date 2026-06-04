@@ -42,6 +42,7 @@ func NewEcho(
 	config *config.Config,
 	pwMiddleware *PWMiddleware.ReadOnlyMiddleware,
 	sessionMiddleware *PWMiddleware.SessionMiddleware,
+	featurePolicyMiddleware *PWMiddleware.FeaturePolicyMiddleware,
 ) *echo.Echo {
 
 	// Initialize Sentry if enabled
@@ -122,6 +123,7 @@ func NewEcho(
 	}))
 
 	e.Use(pwMiddleware.ReadOnly)
+	e.Use(featurePolicyMiddleware.Apply)
 	e.Use(sessionMiddleware.Session())
 
 	return e

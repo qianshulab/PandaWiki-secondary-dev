@@ -36,4 +36,7 @@ var ProviderSet = wire.NewSet(
 	NewWechatAppUsecase,
 	NewAuthUsecase,
 	NewNavUsecase,
+	NewPromptUsecase,
+	NewBlockWordUsecase,
+	NewAPITokenUsecase,
 )
