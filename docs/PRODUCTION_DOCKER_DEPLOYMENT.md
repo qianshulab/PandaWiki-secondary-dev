@@ -1,6 +1,6 @@
 # PandaWiki 生产级 Docker 部署（无 fake 依赖）
 
-更新时间：2026-06-04 22:50 Asia/Shanghai
+更新时间：2026-06-04 23:55 Asia/Shanghai
 
 本部署方案不再使用 `fake_caddy` / `fake_rag`，仅保留真实服务链路（PostgreSQL、Redis、NATS、MinIO、Qdrant、RAGLite、Anydoc Crawler、PandaWiki API、Consumer、Caddy、Admin、App）。
 
@@ -8,6 +8,8 @@
 
 - `deploy/production/docker-compose.yml`
 - `deploy/production/Caddyfile`
+- `web/admin/Dockerfile`
+- `web/admin/server.conf`
 
 ## 2. 一键启动
 
@@ -107,6 +109,8 @@ dial tcp 172.30.0.18:5050: connect: no route to host
 
 1. 打开 `https://127.0.0.1:2443/login`
 2. 使用 admin 帐号（`admin`）和 `ADMIN_PASSWORD` 登陆。
+3. Admin 容器现在会在 Docker 构建阶段执行 `pnpm --filter panda-wiki-admin build`，不再依赖本机残留的 `web/admin/dist`，避免出现后端已放开功能、前端仍显示旧“商业版可用”的问题。
+4. `index.html` / SPA 路由响应已设置 `Cache-Control: no-store`；静态 hashed assets 使用 `immutable`。升级后如果浏览器页面一直开着，仍建议执行一次完整刷新（Windows/Chrome：`Ctrl + F5`）或重新登录。
 
 ### 5.5 Wiki 站点路由验证
 
@@ -125,6 +129,22 @@ curl -sS http://127.0.0.1:8000/mcp -H "Content-Type: application/json" -d '{"jso
 ```
 
 （若服务为授权模式，需要携带 `X-KB-ID`、Token，或把 KB 设置为公开测试。）
+
+### 5.7 二开能力入口核验
+
+登录 Admin 后可按以下位置核验本轮二开能力：
+
+| 能力 | Admin 入口 |
+| --- | --- |
+| 自定义版权 / Footer | `设置 -> 门户网站 -> 定制 Footer`、`设置 -> 门户网站 -> 智能问答版权信息` |
+| 自定义 AI Prompt | `设置 -> 问答设置 -> 智能问答提示词` |
+| 高级机器人配置 | `设置 -> AI 机器人` |
+| OpenAI 兼容问答 API | `设置 -> AI 机器人 -> 问答机器人 API` |
+| MCP Server | `设置 -> MCP 设置` |
+| API Token | `设置 -> 访问控制 -> API Token` |
+| 页面水印 / 复制保护 | `设置 -> 安全设置` |
+
+当前生产容器验收结果：`安全设置` 页面已无“商业版可用”遮罩，水印与内容复制选项均可点击。
 
 ## 6. 与旧 fake 链路的差异
 

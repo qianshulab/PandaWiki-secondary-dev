@@ -199,8 +199,8 @@ services:
 
   pandawiki-admin:
     build:
-      context: ../../web/admin
-      dockerfile: Dockerfile
+      context: ../../web
+      dockerfile: admin/Dockerfile
     container_name: pandawiki-prod-admin
     restart: unless-stopped
     ports:
