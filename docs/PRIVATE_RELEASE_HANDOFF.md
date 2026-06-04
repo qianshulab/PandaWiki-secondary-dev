@@ -8,8 +8,8 @@
 
 - 私有仓库：`https://github.com/qianshulab/PandaWiki-secondary-dev`
 - 交付分支：`secondary-dev-analysis`
-- 当前验收提交：`05d1261b fix: build admin assets in production image`
-- 当前验收标签：`checkpoint/admin-production-asset-cache-fix-20260604-2355`
+- 当前验收提交：以私有仓库 `secondary-dev-analysis` 分支最新 HEAD 为准
+- 当前验收标签：`checkpoint/remove-official-community-links-20260605`
 - 上游原版远端建议保留为：`upstream=https://github.com/chaitin/PandaWiki.git`
 
 > 注意：该仓库必须保持 `Private`。不要把二开分支推送到官方 `chaitin/PandaWiki` 或任何 Public 仓库。
@@ -137,6 +137,8 @@ docker compose -f deploy/production/docker-compose.yml up -d --build
 - 示例 Wiki：`http://127.0.0.1:8011/` 返回 200；
 - Admin 安全设置页面：`商业版可用` 数量为 0，水印/复制保护选项均未 disabled；
 - Admin 资源缓存：`index.html` 已 `no-store`，避免前端容器更新后仍加载旧商业遮罩资源。
+- 官方/社区外链清理：Admin 侧边栏、版本区域、新建 Wiki 默认内容、导入/机器人/MCP/访问认证配置卡片、Wiki Footer 默认资源、公共 Footer 技术支持链接均已去除官方 GitHub、官方文档、微信交流群、官方论坛、商务咨询和官方远程 Logo/Sentry 上报入口；已有 Wiki 历史配置也会在前台运行时过滤。
+- 官方/社区外链生产验收脚本：`scripts/e2e/verify_no_official_links.cjs`，当前结果 `ok: true`。
 
 机器可读验收报告：
 
@@ -220,6 +222,8 @@ docker compose -f deploy/production/docker-compose.yml up -d --build
 - 私有仓库不要改为 Public；
 - 生产部署必须替换默认 `ADMIN_PASSWORD`、`JWT_SECRET` 和数据库/对象存储密码；
 - 修改 Admin 前端后必须重新构建 Admin 镜像，不要手工拷贝旧 `dist`；
+- 新增页面入口时不要重新引入官方 GitHub、微信交流群、官方论坛、官方文档、商务咨询等外链；如需帮助文档，建议使用企业自有文档地址或站内文档；
 - 新增/修改 feature policy 后，应同时验证 `/api/v1/license` 输出和 Admin 页面遮罩状态；
 - Wiki 自定义端口在本地验收建议使用 `8010-8099`，该范围已在生产 compose 暴露；
 - MCP 当前定位为只读检索能力，不用于自动创建/发布 Wiki 文档。
+

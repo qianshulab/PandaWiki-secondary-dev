@@ -791,12 +791,6 @@ const CardAuth = ({ kb, refresh }: CardAuthProps) => {
         title='访问认证'
         isEdit={isEdit}
         onSubmit={onSubmit}
-        more={{
-          type: 'link',
-          href: 'https://pandawiki.docs.baizhi.cloud/node/01986040-602c-736c-b99f-0b3cb9bb89e5',
-          target: '_blank',
-          text: '使用方法',
-        }}
       >
         <FormItem label='访问控制'>
           <Controller

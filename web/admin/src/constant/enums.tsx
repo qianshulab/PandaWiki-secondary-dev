@@ -174,7 +174,7 @@ export const ModelProvider = {
     code: true,
     embedding: true,
     rerank: true,
-    modelDocumentUrl: 'https://model-square.app.baizhi.cloud/token',
+    modelDocumentUrl: '',
     defaultBaseUrl: 'https://model-square.app.baizhi.cloud/v1',
   },
   ZhiPu: {

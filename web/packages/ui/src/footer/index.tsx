@@ -337,22 +337,10 @@ const Footer = React.memo(
                   color: alpha(theme.palette.text.primary, 0.3),
                 })}
               >
-                <Link
-                  href={'https://pandawiki.docs.baizhi.cloud/'}
-                  target='_blank'
-                >
-                  <Stack
-                    direction={'row'}
-                    alignItems={'center'}
-                    gap={0.5}
-                    sx={{
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Box>{decodeBase64(PROJECT_NAME)}</Box>
-                    <img src={logo} alt='PandaWiki' width={0} height={0} />
-                  </Stack>
-                </Link>
+                <Stack direction={'row'} alignItems={'center'} gap={0.5}>
+                  <Box>{decodeBase64(PROJECT_NAME)}</Box>
+                  <img src={logo} alt='PandaWiki' width={0} height={0} />
+                </Stack>
               </Stack>
             )}
           </Box>
@@ -777,30 +765,10 @@ const Footer = React.memo(
                         color: alpha(theme.palette.text.primary, 0.5),
                       })}
                     >
-                      <Link
-                        href={'https://pandawiki.docs.baizhi.cloud/'}
-                        target='_blank'
-                      >
-                        <Stack
-                          direction={'row'}
-                          alignItems={'center'}
-                          gap={0.5}
-                          sx={{
-                            cursor: 'pointer',
-                            '&:hover': {
-                              color: 'primary.main',
-                            },
-                          }}
-                        >
-                          <Box>{decodeBase64(PROJECT_NAME)}</Box>
-                          <img
-                            src={logo}
-                            alt='PandaWiki'
-                            width={0}
-                            height={0}
-                          />
-                        </Stack>
-                      </Link>
+                      <Stack direction={'row'} alignItems={'center'} gap={0.5}>
+                        <Box>{decodeBase64(PROJECT_NAME)}</Box>
+                        <img src={logo} alt='PandaWiki' width={0} height={0} />
+                      </Stack>
                     </Stack>
                   </>
                 )}

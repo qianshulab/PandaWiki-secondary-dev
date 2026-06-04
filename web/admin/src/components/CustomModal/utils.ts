@@ -1,14 +1,55 @@
 import { getBasePath } from '@/utils/getBasePath';
 
+const OFFICIAL_LINK_PATTERNS = [
+  'pandawiki.docs.baizhi.cloud',
+  'release.baizhi.cloud',
+  'sentry.baizhi.cloud',
+  'baizhi.cloud/consult',
+  'bbs.baizhi.cloud',
+  'pandawiki.qa.baizhi.cloud',
+  'github.com/chaitin/PandaWiki',
+  'ly.safepoint.cloud',
+  'model-square.app.baizhi.cloud/token',
+];
+
+const OFFICIAL_TEXT_PATTERNS = [
+  'GitHub',
+  'Github',
+  '帮助文档',
+  '在线支持',
+  '微信交流群',
+  '企业微信交流群',
+  '社区论坛',
+  '官方论坛',
+  '商务咨询',
+  '立即更新',
+];
+
+const containsOfficialPattern = (value?: string | null) => {
+  if (!value) return false;
+  return (
+    OFFICIAL_LINK_PATTERNS.some(pattern => value.includes(pattern)) ||
+    OFFICIAL_TEXT_PATTERNS.some(pattern => value.includes(pattern))
+  );
+};
+
+const shouldRemoveOfficialItem = (item: Record<string, any>) => {
+  return ['url', 'href', 'link', 'text', 'name', 'icon'].some(key =>
+    containsOfficialPattern(item?.[key]),
+  );
+};
+
 const handleHeaderProps = (setting: any) => {
   return {
     title: setting.title,
     logo: getBasePath(setting.icon || ''),
-    btns: setting.btns?.map((btn: any) => ({
-      ...btn,
-      url: getBasePath(btn.url || ''),
-      icon: getBasePath(btn.icon || ''),
-    })),
+    btns: setting.btns
+      ?.filter((btn: any) => !shouldRemoveOfficialItem(btn))
+      .map((btn: any) => ({
+        ...btn,
+        url: getBasePath(btn.url || ''),
+        icon: getBasePath(btn.icon || ''),
+      })),
     homePath: window.__BASENAME__ || '',
     placeholder:
       setting.web_app_custom_style?.header_search_placeholder || '搜索...',
@@ -16,22 +57,34 @@ const handleHeaderProps = (setting: any) => {
 };
 
 const handleFooterProps = (setting: any) => {
+  const footerSettings = setting.footer_settings || {};
+  const customStyle = setting.web_app_custom_style || {};
   return {
     footerSetting: {
-      ...(setting.footer_settings || {}),
-      brand_logo: getBasePath(setting.footer_settings?.brand_logo || ''),
+      ...footerSettings,
+      brand_logo: getBasePath(footerSettings?.brand_logo || ''),
+      brand_groups:
+        footerSettings.brand_groups
+          ?.map((group: any) => ({
+            ...group,
+            links:
+              group.links?.filter(
+                (link: any) => !shouldRemoveOfficialItem(link),
+              ) || [],
+          }))
+          .filter((group: any) => group.links.length > 0) || [],
     },
-    logo: 'https://release.baizhi.cloud/panda-wiki/icon.png',
-    showBrand: setting.web_app_custom_style?.show_brand_info || false,
+    logo: getBasePath('/images/init/icon.png'),
+    showBrand: customStyle?.show_brand_info || false,
     customStyle: {
-      ...(setting.web_app_custom_style || {}),
+      ...customStyle,
       social_media_accounts:
-        setting.web_app_custom_style?.social_media_accounts?.map(
-          (item: any) => ({
+        customStyle?.social_media_accounts
+          ?.filter((item: any) => !shouldRemoveOfficialItem(item))
+          .map((item: any) => ({
             ...item,
             icon: getBasePath(item.icon),
-          }),
-        ),
+          })) || [],
     },
   };
 };
@@ -40,10 +93,12 @@ const handleFaqProps = (config: any = {}) => {
   return {
     title: config.title || '链接组',
     items:
-      config.list?.map((item: any) => ({
-        question: item.question,
-        url: item.link,
-      })) || [],
+      config.list
+        ?.filter((item: any) => !shouldRemoveOfficialItem(item))
+        .map((item: any) => ({
+          question: item.question,
+          url: item.link,
+        })) || [],
   };
 };
 

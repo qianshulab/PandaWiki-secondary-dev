@@ -8,7 +8,6 @@ import {
   IconButton,
 } from '@mui/material';
 import InfoOutlineSharpIcon from '@mui/icons-material/InfoOutlineSharp';
-import KeySharpIcon from '@mui/icons-material/KeySharp';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
@@ -156,20 +155,8 @@ const AutoModelConfig = forwardRef<AutoModelConfigRef, AutoModelConfigProps>(
               />
               API Key
             </Box>
-            <Box
-              component='a'
-              href='https://model-square.app.baizhi.cloud/token'
-              target='_blank'
-              sx={{
-                color: 'primary.main',
-                fontSize: 12,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              <KeySharpIcon sx={{ fontSize: 14, color: 'primary.main' }} />
-              获取百智云 API Key
+            <Box sx={{ color: 'text.secondary', fontSize: 12 }}>
+              填写你自己的 API Key
             </Box>
           </Box>
           <TextField

@@ -81,12 +81,6 @@ const CardRobotFeishu = ({ kb }: { kb: DomainKnowledgeBaseDetail }) => {
       title='飞书机器人'
       isEdit={isEdit}
       onSubmit={onSubmit}
-      more={{
-        type: 'link',
-        href: 'https://pandawiki.docs.baizhi.cloud/node/01971b5f-4520-7c4b-8b4e-683ec5235adc',
-        target: '_blank',
-        text: '使用方法',
-      }}
     >
       <FormItem label='飞书机器人' required>
         <Controller

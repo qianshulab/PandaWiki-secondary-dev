@@ -72,12 +72,6 @@ const CardRobotDiscord = ({ kb }: { kb: DomainKnowledgeBaseDetail }) => {
       title='Discord 机器人'
       isEdit={isEdit}
       onSubmit={onSubmit}
-      more={{
-        type: 'link',
-        href: 'https://pandawiki.docs.baizhi.cloud/node/0197d4e2-b5d9-7903-b12b-66e12cf2f715',
-        target: '_blank',
-        text: '使用方法',
-      }}
     >
       <FormItem label='Discord 机器人'>
         <Controller

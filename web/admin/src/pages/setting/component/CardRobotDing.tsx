@@ -83,12 +83,6 @@ const CardRobotDing = ({ kb }: { kb: DomainKnowledgeBaseDetail }) => {
       title='钉钉机器人'
       isEdit={isEdit}
       onSubmit={onSubmit}
-      more={{
-        type: 'link',
-        href: 'https://pandawiki.docs.baizhi.cloud/node/01971b5f-258e-7c3d-b26a-42e96aea068b',
-        target: '_blank',
-        text: '使用方法',
-      }}
     >
       <FormItem label='钉钉机器人'>
         <Controller

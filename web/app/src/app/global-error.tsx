@@ -1,6 +1,4 @@
 'use client';
-import * as Sentry from '@sentry/nextjs';
-import { useEffect } from 'react';
 import ErrorPng from '@/assets/images/500.png';
 import Footer from '@/components/footer';
 import { lightTheme } from '@/theme';
@@ -14,13 +12,6 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    // 只在生产环境下上报错误到 Sentry
-    if (process.env.NODE_ENV === 'production') {
-      Sentry.captureException(error);
-    }
-  }, [error]);
-
   return (
     <html lang='en'>
       <body>

@@ -11,6 +11,7 @@ import localFont from 'next/font/local';
 import { headers, cookies } from 'next/headers';
 import { getSelectorsByUserAgent } from 'react-device-detect';
 import { getBasePath, getImagePath } from '@/utils';
+import { sanitizeOfficialLinks } from '@/utils/sanitizeOfficialLinks';
 import './globals.css';
 
 const gilory = localFont({
@@ -79,8 +80,9 @@ const Layout = async ({
 
   const authInfo: any =
     authInfoResolve.status === 'fulfilled' ? authInfoResolve.value : undefined;
-  const kbDetail: any =
+  const rawKbDetail: any =
     kbDetailResolve.status === 'fulfilled' ? kbDetailResolve.value : undefined;
+  const kbDetail: any = sanitizeOfficialLinks(rawKbDetail);
 
   if (
     authInfoResolve.status === 'rejected' &&

@@ -21,6 +21,7 @@ import {
   addExpandState,
   type NavItem,
 } from '@/utils/tree';
+import { sanitizeOfficialLinks } from '@/utils/sanitizeOfficialLinks';
 
 interface StoreContextType {
   authInfo?: GithubComChaitinPandaWikiProApiShareV1AuthInfoResp;
@@ -66,7 +67,7 @@ export default function StoreProvider({
   const context = useContext(StoreContext) || {};
   const {
     widget = context.widget,
-    kbDetail = context.kbDetail,
+    kbDetail: rawKbDetail = context.kbDetail,
     themeMode = context.themeMode,
     nodeList: initialNodeList = context.nodeList || [],
     mobile = context.mobile,
@@ -76,6 +77,10 @@ export default function StoreProvider({
     selectedNavId: initialSelectedNavId = context.selectedNavId,
     navDataMap: initialNavDataMap = context.navDataMap || {},
   } = props;
+  const kbDetail = useMemo(
+    () => sanitizeOfficialLinks(rawKbDetail),
+    [rawKbDetail],
+  );
 
   const NAV_ID_STORAGE_KEY = 'panda-wiki-selected-nav-id';
 

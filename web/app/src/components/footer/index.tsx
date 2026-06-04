@@ -1,4 +1,5 @@
 'use client';
+import Logo from '@/assets/images/footer-logo.png';
 import { useStore } from '@/provider';
 import { useMemo } from 'react';
 import { getImagePath } from '@/utils/getImagePath';
@@ -33,7 +34,7 @@ export const FooterProvider = ({
       catalogWidth={catalogWidth}
       showBrand={showBrand}
       isDocPage={isDocPage}
-      logo='https://release.baizhi.cloud/panda-wiki/icon.png'
+      logo={getImagePath(Logo.src, basePath)}
       docWidth={docWidth}
       footerSetting={
         footerSetting
@@ -71,7 +72,7 @@ export const WelcomeFooter = ({
       catalogWidth={catalogWidth}
       showBrand={showBrand}
       isDocPage={false}
-      logo='https://release.baizhi.cloud/panda-wiki/icon.png'
+      logo={getImagePath(Logo.src, basePath)}
       docWidth='full'
       footerSetting={
         footerSetting
