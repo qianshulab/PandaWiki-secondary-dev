@@ -1,9 +1,9 @@
 import { uploadFile } from '@/api';
 import Emoji from '@/components/Emoji';
 import { BUSINESS_VERSION_PERMISSION } from '@/constant/version';
+import { useLicensePolicyFlag } from '@/hooks';
 import { postApiV1CreationTabComplete, putApiV1NodeDetail } from '@/request';
 import { V1NodeDetailResp } from '@/request/types';
-import { useAppSelector } from '@/store';
 import { completeIncompleteLinks } from '@/utils';
 import {
   EditorMarkdown,
@@ -45,7 +45,10 @@ interface WrapProps {
 const Wrap = ({ detail: defaultDetail }: WrapProps) => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const { license } = useAppSelector(state => state.config);
+  const allowDocHistory = useLicensePolicyFlag(
+    'allow_doc_history',
+    BUSINESS_VERSION_PERMISSION,
+  );
 
   const state = useLocation().state as { node?: V1NodeDetailResp };
   const {
@@ -86,10 +89,6 @@ const Wrap = ({ detail: defaultDetail }: WrapProps) => {
     summary: defaultDetail.meta?.summary || '',
     emoji: defaultDetail.meta?.emoji || '',
   });
-
-  const isBusiness = useMemo(() => {
-    return BUSINESS_VERSION_PERMISSION.includes(license.edition!);
-  }, [license]);
 
   const debouncedUpdateSummary = useCallback(
     debounce((newSummary: string) => {
@@ -423,7 +422,7 @@ const Wrap = ({ detail: defaultDetail }: WrapProps) => {
               </Stack>
             </Tooltip>
           )}
-          <Tooltip arrow title={isBusiness ? '查看历史版本' : ''}>
+          <Tooltip arrow title={allowDocHistory ? '查看历史版本' : ''}>
             <Stack
               direction={'row'}
               alignItems={'center'}
@@ -431,13 +430,13 @@ const Wrap = ({ detail: defaultDetail }: WrapProps) => {
               sx={{
                 fontSize: 12,
                 color: 'text.tertiary',
-                cursor: isBusiness ? 'pointer' : 'text',
+                cursor: allowDocHistory ? 'pointer' : 'text',
                 ':hover': {
-                  color: isBusiness ? 'primary.main' : 'text.tertiary',
+                  color: allowDocHistory ? 'primary.main' : 'text.tertiary',
                 },
               }}
               onClick={() => {
-                if (isBusiness) {
+                if (allowDocHistory) {
                   navigate(`/doc/editor/history/${defaultDetail.id}`);
                 }
               }}

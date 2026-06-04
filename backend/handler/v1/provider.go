@@ -26,6 +26,7 @@ type APIHandlers struct {
 	PromptHandler        *PromptHandler
 	BlockWordHandler     *BlockWordHandler
 	APITokenHandler      *APITokenHandler
+	ContributeHandler    *ContributeHandler
 }
 
 var ProviderSet = wire.NewSet(
@@ -50,6 +51,7 @@ var ProviderSet = wire.NewSet(
 	NewPromptHandler,
 	NewBlockWordHandler,
 	NewAPITokenHandler,
+	NewContributeHandler,
 
 	wire.Struct(new(APIHandlers), "*"),
 )

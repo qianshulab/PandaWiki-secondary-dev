@@ -14,40 +14,46 @@ import (
 // open-source build. It provides a clean local policy layer without depending on
 // the commercial license verifier that exists in the private edition.
 type FeaturePolicyConfig struct {
-	Enabled                bool   `mapstructure:"enabled"`
-	Edition                string `mapstructure:"edition"`
-	MaxKB                  int    `mapstructure:"max_kb"`
-	MaxNode                int    `mapstructure:"max_node"`
-	MaxSSOUser             int    `mapstructure:"max_sso_users"`
-	MaxAdmin               int64  `mapstructure:"max_admin"`
-	AllowAdminPerm         bool   `mapstructure:"allow_admin_perm"`
-	AllowCustomCopyright   bool   `mapstructure:"allow_custom_copyright"`
-	AllowCommentAudit      bool   `mapstructure:"allow_comment_audit"`
-	AllowAdvancedBot       bool   `mapstructure:"allow_advanced_bot"`
-	AllowWatermark         bool   `mapstructure:"allow_watermark"`
-	AllowCopyProtection    bool   `mapstructure:"allow_copy_protection"`
-	AllowOpenAIBotSettings bool   `mapstructure:"allow_open_ai_bot_settings"`
-	AllowMCPServer         bool   `mapstructure:"allow_mcp_server"`
-	AllowNodeStats         bool   `mapstructure:"allow_node_stats"`
+	Enabled                       bool   `mapstructure:"enabled"`
+	Edition                       string `mapstructure:"edition"`
+	MaxKB                         int    `mapstructure:"max_kb"`
+	MaxNode                       int    `mapstructure:"max_node"`
+	MaxSSOUser                    int    `mapstructure:"max_sso_users"`
+	MaxAdmin                      int64  `mapstructure:"max_admin"`
+	AllowAdminPerm                bool   `mapstructure:"allow_admin_perm"`
+	AllowCustomCopyright          bool   `mapstructure:"allow_custom_copyright"`
+	AllowCommentAudit             bool   `mapstructure:"allow_comment_audit"`
+	AllowAdvancedBot              bool   `mapstructure:"allow_advanced_bot"`
+	AllowWatermark                bool   `mapstructure:"allow_watermark"`
+	AllowCopyProtection           bool   `mapstructure:"allow_copy_protection"`
+	AllowOpenAIBotSettings        bool   `mapstructure:"allow_open_ai_bot_settings"`
+	AllowMCPServer                bool   `mapstructure:"allow_mcp_server"`
+	AllowNodeStats                bool   `mapstructure:"allow_node_stats"`
+	AllowDocHistory               bool   `mapstructure:"allow_doc_history"`
+	AllowContribution             bool   `mapstructure:"allow_contribution"`
+	AllowVisitorPermissionControl bool   `mapstructure:"allow_visitor_permission_control"`
 }
 
 func DefaultFeaturePolicyConfig() FeaturePolicyConfig {
 	return FeaturePolicyConfig{
-		Enabled:                true,
-		Edition:                "profession",
-		MaxKB:                  10,
-		MaxNode:                10000,
-		MaxSSOUser:             0,
-		MaxAdmin:               20,
-		AllowAdminPerm:         true,
-		AllowCustomCopyright:   true,
-		AllowCommentAudit:      true,
-		AllowAdvancedBot:       true,
-		AllowWatermark:         false,
-		AllowCopyProtection:    false,
-		AllowOpenAIBotSettings: false,
-		AllowMCPServer:         false,
-		AllowNodeStats:         true,
+		Enabled:                       true,
+		Edition:                       "profession",
+		MaxKB:                         10,
+		MaxNode:                       10000,
+		MaxSSOUser:                    0,
+		MaxAdmin:                      20,
+		AllowAdminPerm:                true,
+		AllowCustomCopyright:          true,
+		AllowCommentAudit:             true,
+		AllowAdvancedBot:              true,
+		AllowWatermark:                true,
+		AllowCopyProtection:           true,
+		AllowOpenAIBotSettings:        true,
+		AllowMCPServer:                true,
+		AllowNodeStats:                true,
+		AllowDocHistory:               true,
+		AllowContribution:             true,
+		AllowVisitorPermissionControl: true,
 	}
 }
 
@@ -77,19 +83,22 @@ func (f FeaturePolicyConfig) Limitation() domain.BaseEditionLimitation {
 	}
 
 	return domain.BaseEditionLimitation{
-		MaxKb:                  f.MaxKB,
-		MaxNode:                f.MaxNode,
-		MaxSSOUser:             f.MaxSSOUser,
-		MaxAdmin:               f.MaxAdmin,
-		AllowAdminPerm:         f.AllowAdminPerm,
-		AllowCustomCopyright:   f.AllowCustomCopyright,
-		AllowCommentAudit:      f.AllowCommentAudit,
-		AllowAdvancedBot:       f.AllowAdvancedBot,
-		AllowWatermark:         f.AllowWatermark,
-		AllowCopyProtection:    f.AllowCopyProtection,
-		AllowOpenAIBotSettings: f.AllowOpenAIBotSettings,
-		AllowMCPServer:         f.AllowMCPServer,
-		AllowNodeStats:         f.AllowNodeStats,
+		MaxKb:                         f.MaxKB,
+		MaxNode:                       f.MaxNode,
+		MaxSSOUser:                    f.MaxSSOUser,
+		MaxAdmin:                      f.MaxAdmin,
+		AllowAdminPerm:                f.AllowAdminPerm,
+		AllowCustomCopyright:          f.AllowCustomCopyright,
+		AllowCommentAudit:             f.AllowCommentAudit,
+		AllowAdvancedBot:              f.AllowAdvancedBot,
+		AllowWatermark:                f.AllowWatermark,
+		AllowCopyProtection:           f.AllowCopyProtection,
+		AllowOpenAIBotSettings:        f.AllowOpenAIBotSettings,
+		AllowMCPServer:                f.AllowMCPServer,
+		AllowNodeStats:                f.AllowNodeStats,
+		AllowDocHistory:               f.AllowDocHistory,
+		AllowContribution:             f.AllowContribution,
+		AllowVisitorPermissionControl: f.AllowVisitorPermissionControl,
 	}
 }
 
@@ -112,6 +121,9 @@ func (f *FeaturePolicyConfig) OverrideWithEnv() {
 	setBoolFromEnv("FEATURE_POLICY_ALLOW_OPEN_AI_BOT_SETTINGS", &f.AllowOpenAIBotSettings)
 	setBoolFromEnv("FEATURE_POLICY_ALLOW_MCP_SERVER", &f.AllowMCPServer)
 	setBoolFromEnv("FEATURE_POLICY_ALLOW_NODE_STATS", &f.AllowNodeStats)
+	setBoolFromEnv("FEATURE_POLICY_ALLOW_DOC_HISTORY", &f.AllowDocHistory)
+	setBoolFromEnv("FEATURE_POLICY_ALLOW_CONTRIBUTION", &f.AllowContribution)
+	setBoolFromEnv("FEATURE_POLICY_ALLOW_VISITOR_PERMISSION_CONTROL", &f.AllowVisitorPermissionControl)
 }
 
 func setStringFromEnv(key string, dst *string) {

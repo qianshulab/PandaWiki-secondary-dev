@@ -111,6 +111,8 @@ func createApp() (*App, error) {
 		return nil, err
 	}
 	ipAddressRepo := ipdb2.NewIPAddressRepo(ipdbIPDB, logger)
+	contributeRepository := pg2.NewContributeRepository(db, logger)
+	contributeUsecase := usecase.NewContributeUsecase(logger, contributeRepository, nodeRepository, appRepository, ipAddressRepo, nodeUsecase)
 	conversationUsecase := usecase.NewConversationUsecase(conversationRepository, nodeRepository, geoRepo, logger, ipAddressRepo, authRepo)
 	blockWordRepo := pg2.NewBlockWordRepo(db, logger)
 	blockWordUsecase := usecase.NewBlockWordUsecase(logger, blockWordRepo)
@@ -123,6 +125,7 @@ func createApp() (*App, error) {
 	promptHandler := v1.NewPromptHandler(echo, baseHandler, logger, authMiddleware, promptUsecase)
 	blockWordHandler := v1.NewBlockWordHandler(echo, baseHandler, logger, authMiddleware, blockWordUsecase)
 	apiTokenHandler := v1.NewAPITokenHandler(echo, baseHandler, logger, authMiddleware, apiTokenUsecase)
+	contributeHandler := v1.NewContributeHandler(echo, baseHandler, logger, authMiddleware, contributeUsecase)
 	fileUsecase := usecase.NewFileUsecase(logger, minioClient, configConfig, systemSettingRepo)
 	fileHandler := v1.NewFileHandler(echo, baseHandler, logger, authMiddleware, minioClient, configConfig, fileUsecase)
 	modelHandler := v1.NewModelHandler(echo, baseHandler, logger, authMiddleware, modelUsecase, llmUsecase)
@@ -169,6 +172,7 @@ func createApp() (*App, error) {
 		PromptHandler:        promptHandler,
 		BlockWordHandler:     blockWordHandler,
 		APITokenHandler:      apiTokenHandler,
+		ContributeHandler:    contributeHandler,
 	}
 	shareNodeHandler := share.NewShareNodeHandler(baseHandler, echo, nodeUsecase, logger)
 	shareNavHandler := share.NewShareNavHandler(baseHandler, echo, navUsecase, logger)
@@ -188,6 +192,7 @@ func createApp() (*App, error) {
 	shareCaptchaHandler := share.NewShareCaptchaHandler(baseHandler, echo, logger)
 	openapiV1Handler := share.NewOpenapiV1Handler(echo, baseHandler, logger, authUsecase, appUsecase)
 	shareCommonHandler := share.NewShareCommonHandler(echo, baseHandler, logger, fileUsecase)
+	shareContributeHandler := share.NewShareContributeHandler(echo, baseHandler, logger, contributeUsecase)
 	shareHandler := &share.ShareHandler{
 		ShareNodeHandler:         shareNodeHandler,
 		ShareNavHandler:          shareNavHandler,
@@ -202,6 +207,7 @@ func createApp() (*App, error) {
 		ShareCaptchaHandler:      shareCaptchaHandler,
 		OpenapiV1Handler:         openapiV1Handler,
 		ShareCommonHandler:       shareCommonHandler,
+		ShareContributeHandler:   shareContributeHandler,
 	}
 	mcpRepository := pg2.NewMCPRepository(db, logger)
 	client, err := telemetry.NewClient(logger, knowledgeBaseRepository, modelUsecase, userUsecase, nodeRepository, conversationRepository, mcpRepository, configConfig)

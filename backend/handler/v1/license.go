@@ -52,9 +52,10 @@ func (h *LicenseHandler) DeleteLicense(c echo.Context) error {
 func (h *LicenseHandler) currentLicense() domain.LicenseResp {
 	now := time.Now()
 	return domain.LicenseResp{
-		Edition:   h.config.FeaturePolicy.EffectiveEdition(),
-		StartedAt: now.AddDate(-1, 0, 0).Unix(),
-		ExpiredAt: now.AddDate(100, 0, 0).Unix(),
-		State:     1,
+		Edition:    h.config.FeaturePolicy.EffectiveEdition(),
+		StartedAt:  now.AddDate(-1, 0, 0).Unix(),
+		ExpiredAt:  now.AddDate(100, 0, 0).Unix(),
+		State:      1,
+		Limitation: h.config.FeaturePolicy.Limitation(),
 	}
 }

@@ -7,6 +7,7 @@ import {
   DomainKnowledgeBaseDetail,
 } from '@/request/types';
 import { useAppSelector } from '@/store';
+import { useLicensePolicyFlag } from '@/hooks';
 import { message } from '@ctzhian/ui';
 import { BUSINESS_VERSION_PERMISSION, PROFESSION_VERSION_PERMISSION } from '@/constant/version';
 import {
@@ -34,6 +35,7 @@ const WatermarkForm = ({
   refresh: () => void;
 }) => {
   const { kb_id } = useAppSelector(state => state.config);
+  const allowWatermark = useLicensePolicyFlag('allow_watermark', BUSINESS_VERSION_PERMISSION);
   const [watermarkIsEdit, setWatermarkIsEdit] = useState(false);
   const { control, handleSubmit, setValue, watch } = useForm({
     defaultValues: {
@@ -74,7 +76,7 @@ const WatermarkForm = ({
       title='水印'
       isEdit={watermarkIsEdit}
       onSubmit={handleSaveWatermark}
-      permission={BUSINESS_VERSION_PERMISSION}
+      permission={allowWatermark ? undefined : BUSINESS_VERSION_PERMISSION}
     >
       <FormItem label='水印开关'>
         <Controller
@@ -224,6 +226,7 @@ const CopyForm = ({
   refresh: () => void;
 }) => {
   const { kb_id } = useAppSelector(state => state.config);
+  const allowCopyProtection = useLicensePolicyFlag('allow_copy_protection', BUSINESS_VERSION_PERMISSION);
   const [isEdit, setIsEdit] = useState(false);
   const { control, handleSubmit, setValue } = useForm({
     defaultValues: {
@@ -260,7 +263,10 @@ const CopyForm = ({
       isEdit={isEdit}
       onSubmit={handleSaveWatermark}
     >
-      <FormItem label='限制复制' permission={BUSINESS_VERSION_PERMISSION}>
+      <FormItem
+        label='限制复制'
+        permission={allowCopyProtection ? undefined : BUSINESS_VERSION_PERMISSION}
+      >
         <Controller
           control={control}
           name='copy_setting'

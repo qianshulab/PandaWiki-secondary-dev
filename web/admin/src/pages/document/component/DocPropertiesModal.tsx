@@ -37,6 +37,7 @@ import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { BUSINESS_VERSION_PERMISSION } from '@/constant/version';
+import { useLicensePolicyFlag } from '@/hooks';
 import { VersionCanUse } from '@/components/VersionMask';
 import { IconShuaxin } from '@panda-wiki/icons';
 import SSEClient from '@/utils/fetch';
@@ -81,7 +82,11 @@ const DocPropertiesModal = ({
   onOk,
   isBatch = false,
 }: DocPropertiesModalProps) => {
-  const { kb_id, nav_id, license } = useAppSelector(state => state.config);
+  const { kb_id, nav_id } = useAppSelector(state => state.config);
+  const allowVisitorPermissionControl = useLicensePolicyFlag(
+    'allow_visitor_permission_control',
+    BUSINESS_VERSION_PERMISSION,
+  );
   const [loading, setLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const sseClientRef = useRef<SSEClient<StreamSummaryEvent> | null>(null);
@@ -160,13 +165,13 @@ const DocPropertiesModal = ({
           visitable: values.visitable as ConstsNodeAccessPerm,
           visible: values.visible as ConstsNodeAccessPerm,
         },
-        answerable_groups: isBusiness
+        answerable_groups: allowVisitorPermissionControl
           ? values.answerable_groups.map(item => item.id!)
           : undefined,
-        visitable_groups: isBusiness
+        visitable_groups: allowVisitorPermissionControl
           ? values.visitable_groups.map(item => item.id!)
           : undefined,
-        visible_groups: isBusiness
+        visible_groups: allowVisitorPermissionControl
           ? values.visible_groups.map(item => item.id!)
           : undefined,
       }),
@@ -186,15 +191,11 @@ const DocPropertiesModal = ({
     });
   });
 
-  const isBusiness = useMemo(() => {
-    return BUSINESS_VERSION_PERMISSION.includes(license.edition!);
-  }, [license]);
-
   const tree = filterEmptyFolders(convertToTree(data));
 
   useEffect(() => {
     if (open && data) {
-      if (isBusiness) {
+      if (allowVisitorPermissionControl) {
         getApiProV1AuthGroupList({
           kb_id: kb_id!,
           page: 1,
@@ -239,7 +240,7 @@ const DocPropertiesModal = ({
         );
       });
     }
-  }, [open, data, isBusiness]);
+  }, [open, data, allowVisitorPermissionControl]);
 
   useEffect(() => {
     if (!open) {
@@ -352,7 +353,7 @@ const DocPropertiesModal = ({
                     control={<Radio size='small' />}
                     label={option.label}
                     disabled={
-                      !isBusiness &&
+                      !allowVisitorPermissionControl &&
                       option.value ===
                         ConstsNodeAccessPerm.NodeAccessPermPartial
                     }
@@ -402,7 +403,7 @@ const DocPropertiesModal = ({
                     control={<Radio size='small' />}
                     label={option.label}
                     disabled={
-                      !isBusiness &&
+                      !allowVisitorPermissionControl &&
                       option.value ===
                         ConstsNodeAccessPerm.NodeAccessPermPartial
                     }
@@ -452,7 +453,7 @@ const DocPropertiesModal = ({
                     control={<Radio size='small' />}
                     label={option.label}
                     disabled={
-                      !isBusiness &&
+                      !allowVisitorPermissionControl &&
                       option.value ===
                         ConstsNodeAccessPerm.NodeAccessPermPartial
                     }

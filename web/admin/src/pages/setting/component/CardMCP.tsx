@@ -13,8 +13,10 @@ import ShowText from '@/components/ShowText';
 import { Controller, useForm } from 'react-hook-form';
 import { useMemo, useState, useEffect } from 'react';
 import { message } from '@ctzhian/ui';
+import { useLicensePolicyFlag } from '@/hooks';
+import { BUSINESS_VERSION_PERMISSION } from '@/constant/version';
 import { getApiV1AppDetail, putApiV1App } from '@/request/App';
-import { DomainAppDetailResp, ConstsLicenseEdition } from '@/request/types';
+import { DomainAppDetailResp } from '@/request/types';
 
 interface CardMCPProps {
   kb: DomainKnowledgeBaseDetail;
@@ -22,6 +24,10 @@ interface CardMCPProps {
 
 const CardMCP = ({ kb }: CardMCPProps) => {
   const [isEdit, setIsEdit] = useState(false);
+  const allowMCPServer = useLicensePolicyFlag(
+    'allow_mcp_server',
+    BUSINESS_VERSION_PERMISSION,
+  );
 
   const {
     control,
@@ -124,10 +130,7 @@ const CardMCP = ({ kb }: CardMCPProps) => {
         title='MCP 设置'
         isEdit={isEdit}
         onSubmit={onSubmit}
-        permission={[
-          ConstsLicenseEdition.LicenseEditionBusiness,
-          ConstsLicenseEdition.LicenseEditionEnterprise,
-        ]}
+        permission={allowMCPServer ? undefined : BUSINESS_VERSION_PERMISSION}
         more={{
           type: 'link',
           href: 'https://pandawiki.docs.baizhi.cloud/node/019aa45c-90c1-7e6f-b17a-74ab1b200153',

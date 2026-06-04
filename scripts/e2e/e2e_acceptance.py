@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import hashlib
 import json
 import os
 import sys
@@ -17,6 +18,12 @@ class Client:
         self.token = None
 
     def request(self, method, path, data=None, query=None, headers=None, expect_success=True):
+        payload = self.raw_request(method, path, data=data, query=query, headers=headers)
+        if expect_success and payload.get("success") is False:
+            raise AssertionError(f"{method} {self.base + path} returned failure: {payload}")
+        return payload.get("data"), payload
+
+    def raw_request(self, method, path, data=None, query=None, headers=None):
         url = self.base + path
         if query:
             url += "?" + urllib.parse.urlencode(query, doseq=True)
@@ -30,14 +37,11 @@ class Client:
             body = json.dumps(data).encode()
         req = urllib.request.Request(url, data=body, headers=req_headers, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=60) as resp:
                 raw = resp.read().decode()
-                payload = json.loads(raw) if raw else {}
+                return json.loads(raw) if raw else {}
         except Exception as exc:
             raise AssertionError(f"{method} {url} failed: {exc}") from exc
-        if expect_success and payload.get("success") is False:
-            raise AssertionError(f"{method} {url} returned failure: {payload}")
-        return payload.get("data"), payload
 
 
 def wait_api(client):
@@ -55,6 +59,64 @@ def wait_api(client):
             last = exc
             time.sleep(2)
     raise AssertionError(f"API did not become ready: {last}")
+
+
+def _fnv1a32(text):
+    h = 2166136261
+    for b in text.encode():
+        h ^= b
+        h = (h * 16777619) & 0xFFFFFFFF
+    return h
+
+
+def _prng(seed, length):
+    state = _fnv1a32(seed)
+    chunks = []
+    while sum(len(x) for x in chunks) < length:
+        state ^= (state << 13) & 0xFFFFFFFF
+        state &= 0xFFFFFFFF
+        state ^= state >> 17
+        state &= 0xFFFFFFFF
+        state ^= (state << 5) & 0xFFFFFFFF
+        state &= 0xFFFFFFFF
+        chunks.append(f"{state:08x}")
+    return "".join(chunks)[:length]
+
+
+def _solve_cap_challenge(token, challenge):
+    count = int(challenge["c"])
+    size = int(challenge["s"])
+    difficulty = int(challenge["d"])
+    solutions = []
+    for i in range(count):
+        base = f"{token}{i + 1}"
+        target = _prng(base + "d", difficulty)
+        salt = _prng(base, size)
+        nonce = 0
+        while True:
+            digest = hashlib.sha256(f"{salt}{nonce}".encode()).hexdigest()
+            if digest.startswith(target):
+                solutions.append(nonce)
+                break
+            nonce += 1
+    return solutions
+
+
+def captcha_token(client, kb_id):
+    challenge = client.raw_request(
+        "POST",
+        "/share/v1/captcha/challenge",
+        headers={"X-KB-ID": kb_id},
+    )
+    solutions = _solve_cap_challenge(challenge["token"], challenge["challenge"])
+    redeemed = client.raw_request(
+        "POST",
+        "/share/v1/captcha/redeem",
+        {"token": challenge["token"], "solutions": solutions},
+        headers={"X-KB-ID": kb_id},
+    )
+    assert redeemed.get("success") is True and redeemed.get("token"), redeemed
+    return redeemed["token"]
 
 
 def main():
@@ -90,6 +152,22 @@ def main():
         data, _ = c.request("GET", "/api/v1/license")
         assert data["edition"] == 1, data
         assert data["state"] == 1, data
+        limitation = data.get("limitation") or {}
+        for flag in [
+            "allow_admin_perm",
+            "allow_custom_copyright",
+            "allow_comment_audit",
+            "allow_advanced_bot",
+            "allow_watermark",
+            "allow_copy_protection",
+            "allow_open_ai_bot_settings",
+            "allow_mcp_server",
+            "allow_node_stats",
+            "allow_doc_history",
+            "allow_contribution",
+            "allow_visitor_permission_control",
+        ]:
+            assert limitation.get(flag) is True, (flag, limitation)
 
     def users_over_free_limit():
         state["normal_user_id"] = create_user("e2e-normal-user", "user")
@@ -193,6 +271,158 @@ def main():
         data, _ = c.request("GET", "/api/v1/stat/count", query={"kb_id": state["kb1"], "day": 7})
         assert "page_visit_count" in data, data
 
+    def app_paid_feature_settings():
+        web_app, _ = c.request("GET", "/api/v1/app/detail", query={"kb_id": state["kb1"], "type": 1})
+        web_settings = web_app.get("settings") or {}
+        web_settings.update(
+            {
+                "watermark_setting": "visible",
+                "watermark_content": "E2E Watermark",
+                "copy_setting": "append",
+                "contribute_settings": {"is_enable": True},
+            }
+        )
+        c.request("PUT", "/api/v1/app", {"kb_id": state["kb1"], "settings": web_settings}, query={"id": web_app["id"]})
+        web_app, _ = c.request("GET", "/api/v1/app/detail", query={"kb_id": state["kb1"], "type": 1})
+        settings = web_app.get("settings") or {}
+        assert settings.get("watermark_setting") == "visible", settings
+        assert settings.get("watermark_content") == "E2E Watermark", settings
+        assert settings.get("copy_setting") == "append", settings
+        assert settings.get("contribute_settings", {}).get("is_enable") is True, settings
+
+        openai_app, _ = c.request("GET", "/api/v1/app/detail", query={"kb_id": state["kb1"], "type": 9})
+        openai_settings = openai_app.get("settings") or {}
+        openai_settings["openai_api_bot_settings"] = {"is_enabled": True, "secret_key": "e2e-openai-secret"}
+        c.request("PUT", "/api/v1/app", {"kb_id": state["kb1"], "settings": openai_settings}, query={"id": openai_app["id"]})
+        openai_app, _ = c.request("GET", "/api/v1/app/detail", query={"kb_id": state["kb1"], "type": 9})
+        assert openai_app.get("settings", {}).get("openai_api_bot_settings", {}).get("is_enabled") is True, openai_app
+
+        mcp_app, _ = c.request("GET", "/api/v1/app/detail", query={"kb_id": state["kb1"], "type": 12})
+        mcp_settings = mcp_app.get("settings") or {}
+        mcp_settings["mcp_server_settings"] = {
+            "is_enabled": True,
+            "docs_tool_settings": {"name": "e2e_get_docs", "desc": "E2E docs retrieval"},
+            "sample_auth": {"enabled": True, "password": "e2e-mcp-pass"},
+        }
+        c.request("PUT", "/api/v1/app", {"kb_id": state["kb1"], "settings": mcp_settings}, query={"id": mcp_app["id"]})
+        mcp_app, _ = c.request("GET", "/api/v1/app/detail", query={"kb_id": state["kb1"], "type": 12})
+        assert mcp_app.get("settings", {}).get("mcp_server_settings", {}).get("is_enabled") is True, mcp_app
+
+    def node_release_history():
+        c.request(
+            "POST",
+            "/api/v1/knowledge_base/release",
+            {
+                "kb_id": state["kb1"],
+                "tag": "e2e-v1",
+                "message": "E2E first release",
+                "node_ids": [state["node_id"]],
+            },
+        )
+        releases, _ = c.request(
+            "GET",
+            "/api/pro/v1/node/release/list",
+            query={"kb_id": state["kb1"], "node_id": state["node_id"]},
+        )
+        assert len(releases) >= 1, releases
+        release = releases[0]
+        assert release.get("release_name") == "e2e-v1", release
+        detail, _ = c.request(
+            "GET",
+            "/api/pro/v1/node/release/detail",
+            query={"kb_id": state["kb1"], "id": release["id"]},
+        )
+        assert "# e2e doc" in detail.get("content", ""), detail
+
+    def visitor_permission_control():
+        c.request(
+            "PATCH",
+            "/api/v1/node/permission/edit",
+            {
+                "kb_id": state["kb1"],
+                "ids": [state["node_id"]],
+                "permissions": {
+                    "answerable": "partial",
+                    "visitable": "partial",
+                    "visible": "partial",
+                },
+                "answerable_groups": [],
+                "visitable_groups": [],
+                "visible_groups": [],
+            },
+        )
+        data, _ = c.request(
+            "GET",
+            "/api/v1/node/permission",
+            query={"kb_id": state["kb1"], "id": state["node_id"]},
+        )
+        assert data.get("permissions", {}).get("answerable") == "partial", data
+        assert data.get("permissions", {}).get("visitable") == "partial", data
+        assert data.get("permissions", {}).get("visible") == "partial", data
+
+    def contribution_workflow():
+        token = captcha_token(c, state["kb1"])
+        add_resp, _ = c.request(
+            "POST",
+            "/share/pro/v1/contribute/submit",
+            {
+                "captcha_token": token,
+                "type": "add",
+                "name": "e2e-contrib-add",
+                "content": "# E2E contribution add\n",
+                "content_type": "md",
+                "emoji": "??",
+                "reason": "E2E add contribution",
+            },
+            headers={"X-KB-ID": state["kb1"]},
+        )
+        add_id = add_resp["id"]
+        listing, _ = c.request(
+            "GET",
+            "/api/pro/v1/contribute/list",
+            query={"kb_id": state["kb1"], "page": 1, "per_page": 20, "node_name": "e2e-contrib-add"},
+        )
+        item = next((x for x in listing.get("list", []) if x["id"] == add_id), None)
+        assert item and item["status"] == "pending" and item.get("ip_address"), listing
+        detail, _ = c.request("GET", "/api/pro/v1/contribute/detail", query={"kb_id": state["kb1"], "id": add_id})
+        assert detail["content"].startswith("# E2E contribution add"), detail
+        audit, _ = c.request(
+            "POST",
+            "/api/pro/v1/contribute/audit",
+            {"id": add_id, "kb_id": state["kb1"], "nav_id": state["nav_id"], "status": "approved"},
+        )
+        assert audit.get("node_id"), audit
+        nodes, _ = c.request("GET", "/api/v1/node/list", query={"kb_id": state["kb1"], "nav_id": state["nav_id"], "search": "e2e-contrib-add"})
+        assert any(n["id"] == audit["node_id"] for n in nodes), nodes
+
+        token = captcha_token(c, state["kb1"])
+        edit_resp, _ = c.request(
+            "POST",
+            "/share/pro/v1/contribute/submit",
+            {
+                "captcha_token": token,
+                "type": "edit",
+                "node_id": state["node_id"],
+                "name": "e2e-doc-edited-by-contrib",
+                "content": "# E2E contribution edit\n",
+                "content_type": "md",
+                "emoji": "??",
+                "reason": "E2E edit contribution",
+            },
+            headers={"X-KB-ID": state["kb1"]},
+        )
+        edit_id = edit_resp["id"]
+        edit_detail, _ = c.request("GET", "/api/pro/v1/contribute/detail", query={"kb_id": state["kb1"], "id": edit_id})
+        assert edit_detail.get("original_node", {}).get("id") == state["node_id"], edit_detail
+        c.request(
+            "POST",
+            "/api/pro/v1/contribute/audit",
+            {"id": edit_id, "kb_id": state["kb1"], "nav_id": state["nav_id"], "status": "approved"},
+        )
+        node, _ = c.request("GET", "/api/v1/node/detail", query={"kb_id": state["kb1"], "id": state["node_id"], "format": "raw"})
+        assert node["name"] == "e2e-doc-edited-by-contrib", node
+        assert "E2E contribution edit" in node["content"], node
+
     checks = [
         ("license/feature_policy", license_policy),
         ("users over free admin limit", users_over_free_limit),
@@ -203,6 +433,10 @@ def main():
         ("api token CRUD", api_token_crud),
         ("comment moderate endpoint", comment_moderate),
         ("7-day statistics permission", stat_day_7),
+        ("paid app settings: watermark/copy/openai/mcp/contribution", app_paid_feature_settings),
+        ("document release history endpoints", node_release_history),
+        ("visitor permission control partial ACL", visitor_permission_control),
+        ("contribution submit/list/detail/audit workflow", contribution_workflow),
     ]
 
     failures = []

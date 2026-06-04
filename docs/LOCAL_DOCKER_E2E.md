@@ -109,11 +109,41 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_UI_INSTALL_PLAYWRIGHT_DEPS=1 /bin/b
 | fake RAG | `http://127.0.0.1:5050` |
 | fake Caddy Admin | `/tmp/pandawiki-caddy-admin.sock` |
 
-## 6. 第一阶段 E2E 验收项
+## 6. 二开功能开关与回滚点
 
-最近一次 API 验收时间：`2026-06-04 10:11 Asia/Shanghai`
+当前二开通过后端 `FeaturePolicy` 统一输出开源二开版能力，并在 E2E 中通过环境变量显式开启：
 
-结果：`9 PASS / 0 FAIL`
+```bash
+FEATURE_POLICY_ENABLED=true
+FEATURE_POLICY_EDITION=profession
+FEATURE_POLICY_MAX_KB=10
+FEATURE_POLICY_MAX_NODE=10000
+FEATURE_POLICY_MAX_ADMIN=20
+FEATURE_POLICY_ALLOW_ADMIN_PERM=true
+FEATURE_POLICY_ALLOW_CUSTOM_COPYRIGHT=true
+FEATURE_POLICY_ALLOW_COMMENT_AUDIT=true
+FEATURE_POLICY_ALLOW_ADVANCED_BOT=true
+FEATURE_POLICY_ALLOW_WATERMARK=true
+FEATURE_POLICY_ALLOW_COPY_PROTECTION=true
+FEATURE_POLICY_ALLOW_OPEN_AI_BOT_SETTINGS=true
+FEATURE_POLICY_ALLOW_MCP_SERVER=true
+FEATURE_POLICY_ALLOW_NODE_STATS=true
+FEATURE_POLICY_ALLOW_DOC_HISTORY=true
+FEATURE_POLICY_ALLOW_CONTRIBUTION=true
+FEATURE_POLICY_ALLOW_VISITOR_PERMISSION_CONTROL=true
+```
+
+当前已保存的回滚点：
+
+```powershell
+git reset --hard checkpoint/first-stage-accepted-20260604-1011
+```
+
+## 7. API E2E 验收项
+
+最近一次 API 验收时间：`2026-06-04 11:00 Asia/Shanghai`
+
+结果：`13 PASS / 0 FAIL`
 
 已覆盖：
 
@@ -126,6 +156,10 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_UI_INSTALL_PLAYWRIGHT_DEPS=1 /bin/b
 7. API Token 创建、查询、更新、删除。
 8. 评论审核接口可调用。
 9. 7 日统计接口权限可用。
+10. 水印、内容复制保护、贡献开关、问答机器人 API、MCP Server 设置读写。
+11. 文档历史版本列表/详情接口。
+12. 访客权限控制 partial ACL。
+13. 贡献提交、列表、详情、审核采纳（新增/编辑）闭环。
 
 报告文件：
 
@@ -133,11 +167,11 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_UI_INSTALL_PLAYWRIGHT_DEPS=1 /bin/b
 reports/e2e-first-stage-report.json
 ```
 
-## 7. UI 录制验收项
+## 8. UI 录制验收项
 
-最近一次 UI 录制验收时间：`2026-06-04 10:11 Asia/Shanghai`
+最近一次 UI 录制验收时间：`2026-06-04 11:00 Asia/Shanghai`
 
-结果：`10 PASS / 0 FAIL`，并确认 `network_errors=[]`、`console_errors=[]`。
+结果：`15 PASS / 0 FAIL`，并确认 `network_errors=[]`、`console_errors=[]`。
 
 已覆盖：
 
@@ -150,7 +184,12 @@ reports/e2e-first-stage-report.json
 7. 评论审核设置前端可见。
 8. 子管理员权限拆分前端展示。
 9. API Token 前端创建并展示。
-10. 浏览器端无 JS 异常、无 API 5xx。
+10. 水印与内容复制保护设置前端展示。
+11. 问答机器人 API 设置前端展示。
+12. MCP Server 设置前端展示。
+13. 文档历史版本前端展示。
+14. 贡献审核列表前端展示。
+15. 浏览器端无 JS 异常、无 API 5xx。
 
 报告与录制产物：
 
@@ -158,10 +197,10 @@ reports/e2e-first-stage-report.json
 reports/ui-e2e-report.json
 reports/ui-e2e-screenshots/
 reports/ui-e2e-trace/ui-e2e-trace.zip
-reports/ui-e2e-video/page@c4fe3a3cb26591878c228393447fb444.webm
+reports/ui-e2e-video/page@40d374d8f3c9cb4f7dc1bceac14503de.webm
 ```
 
-## 8. 前端构建验收
+## 9. 前端构建验收
 
 ### Admin 构建
 
@@ -200,7 +239,7 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_FRONTEND_TARGET=all /bin/bash "/mnt
 wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_FRONTEND_ISOLATED=0 /bin/bash "/mnt/d/AI WorkSpace/PandaWiki/scripts/e2e/build_frontend_wsl.sh"
 ```
 
-## 9. 停止/清理
+## 10. 停止/清理
 
 只停止服务，保留 Docker 数据卷：
 
@@ -214,10 +253,15 @@ wsl -d Ubuntu-22.04 -u root -- /bin/bash "/mnt/d/AI WorkSpace/PandaWiki/scripts/
 wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_E2E_DROP_VOLUMES=1 /bin/bash "/mnt/d/AI WorkSpace/PandaWiki/scripts/e2e/stop_e2e_wsl.sh"
 ```
 
-## 10. 已修复的验收失败/风险项
+## 11. 已修复的验收失败/风险项
 
 - `web/app` Windows standalone 构建的 symlink `EPERM`：通过 WSL/Linux 构建脚本验收。
 - Next standalone `postcss` 外部依赖告警：已在 `web/app/package.json` 增加 `postcss: 8.5.6`。
 - Admin 侧 API Token、内容合规屏蔽词仍按商业版 gating 的问题：已改为专业版可用。
 - Go 本地迁移相对路径问题：E2E 脚本从 `backend/store/pg` 启动迁移和 API，匹配当前源码中的 `file://migration`。
 - 统计页空数据时浏览器报 `Cannot read properties of null (reading 'sort')`：已修复后端空切片返回与前端空值兼容，UI 录制复验无 JS 异常。
+- 文档数 UI 录制期望固定 `301`：贡献审核会新增文档，已改为校验 `>=301`，避免新增功能影响旧验收。
+- 水印/MCP 等输入值不出现在 `body.innerText`：UI 录制已改为读取输入框 value，避免误报。
+- 文档历史版本与编辑页历史入口残留商业版判断：已切换为 `allow_doc_history` 功能开关。
+- 问答机器人 API、内容复制保护前端残留商业版遮罩：已切换为对应功能开关。
+- Node 权限编辑在部分字段缺省时可能误触发空指针：已增加安全处理。

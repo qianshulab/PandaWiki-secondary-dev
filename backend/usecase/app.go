@@ -97,6 +97,10 @@ func NewAppUsecase(
 }
 
 func (u *AppUsecase) ValidateUpdateApp(ctx context.Context, id string, req *domain.UpdateAppReq) error {
+	if req == nil || req.Settings == nil {
+		return nil
+	}
+
 	app, err := u.repo.GetAppDetail(ctx, id)
 	if err != nil {
 		return err
@@ -165,8 +169,10 @@ func (u *AppUsecase) ValidateUpdateApp(ctx context.Context, id string, req *doma
 }
 
 func (u *AppUsecase) UpdateApp(ctx context.Context, id string, appRequest *domain.UpdateAppReq) error {
-	if err := u.handleBotAuths(ctx, id, appRequest.Settings); err != nil {
-		return err
+	if appRequest != nil && appRequest.Settings != nil {
+		if err := u.handleBotAuths(ctx, id, appRequest.Settings); err != nil {
+			return err
+		}
 	}
 
 	if err := u.repo.UpdateApp(ctx, id, appRequest.KbID, appRequest); err != nil {

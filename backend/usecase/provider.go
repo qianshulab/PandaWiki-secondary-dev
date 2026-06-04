@@ -39,4 +39,5 @@ var ProviderSet = wire.NewSet(
 	NewPromptUsecase,
 	NewBlockWordUsecase,
 	NewAPITokenUsecase,
+	NewContributeUsecase,
 )

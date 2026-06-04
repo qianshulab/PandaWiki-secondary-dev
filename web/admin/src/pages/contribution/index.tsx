@@ -11,7 +11,7 @@ import DocModal from './DocModal';
 import VersionMask from '@/components/VersionMask';
 import { PROFESSION_VERSION_PERMISSION } from '@/constant/version';
 
-import { useURLSearchParams } from '@/hooks';
+import { useLicensePolicyFlag, useURLSearchParams } from '@/hooks';
 import {
   getApiProV1ContributeList,
   postApiProV1ContributeAudit,
@@ -51,8 +51,11 @@ export default function ContributionPage() {
   const {
     kb_id = '',
     nav_id = '',
-    license,
   } = useAppSelector(state => state.config);
+  const allowContribution = useLicensePolicyFlag(
+    'allow_contribution',
+    PROFESSION_VERSION_PERMISSION,
+  );
   const [searchParams, setSearchParams] = useURLSearchParams();
   const page = Number(searchParams.get('page') || '1');
   const pageSize = Number(searchParams.get('page_size') || '20');
@@ -292,14 +295,13 @@ export default function ContributionPage() {
   };
 
   useEffect(() => {
-    if (kb_id && PROFESSION_VERSION_PERMISSION.includes(license.edition!))
-      getData();
+    if (kb_id && allowContribution) getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, nodeNameParam, authNameParam, kb_id, license.edition]);
+  }, [page, pageSize, nodeNameParam, authNameParam, kb_id, allowContribution]);
 
   return (
     <Card>
-      <VersionMask permission={PROFESSION_VERSION_PERMISSION}>
+      <VersionMask permission={allowContribution ? undefined : PROFESSION_VERSION_PERMISSION}>
         <Stack
           direction='row'
           alignItems={'center'}

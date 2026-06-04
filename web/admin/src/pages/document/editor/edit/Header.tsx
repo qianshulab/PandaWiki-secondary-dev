@@ -2,6 +2,7 @@ import { ITreeItem } from '@/api';
 import Cascader from '@/components/Cascader';
 import { VersionCanUse } from '@/components/VersionMask';
 import { BUSINESS_VERSION_PERMISSION } from '@/constant/version';
+import { useLicensePolicyFlag } from '@/hooks';
 import VersionPublish from '@/pages/release/components/VersionPublish';
 import { postApiV1Node } from '@/request';
 import { V1NodeDetailResp } from '@/request/types';
@@ -56,8 +57,10 @@ const Header = ({
     wikiUrlRef.current = wikiUrl;
   }, [wikiUrl]);
 
-  const { kb_id, nav_id, license, kbList } = useAppSelector(
-    state => state.config,
+  const { kb_id, nav_id, kbList } = useAppSelector(state => state.config);
+  const allowDocHistory = useLicensePolicyFlag(
+    'allow_doc_history',
+    BUSINESS_VERSION_PERMISSION,
   );
 
   const currentKb = useMemo(() => {
@@ -77,10 +80,6 @@ const Header = ({
   const [publishOpen, setPublishOpen] = useState(false);
 
   const [showSaveTip, setShowSaveTip] = useState(false);
-
-  const isBusiness = useMemo(() => {
-    return BUSINESS_VERSION_PERMISSION.includes(license.edition!);
-  }, [license]);
 
   useEffect(() => {
     if (currentKb?.access_settings?.base_url) {
@@ -300,13 +299,15 @@ const Header = ({
                 key: 'version',
                 textSx: { flex: 1 },
                 label: (
-                  <StyledMenuSelect disabled={!isBusiness}>
-                    历史版本
-                    <VersionCanUse permission={BUSINESS_VERSION_PERMISSION} />
+                  <StyledMenuSelect disabled={!allowDocHistory}>
+                    ????
+                    {!allowDocHistory && (
+                      <VersionCanUse permission={BUSINESS_VERSION_PERMISSION} />
+                    )}
                   </StyledMenuSelect>
                 ),
                 onClick: () => {
-                  if (isBusiness) {
+                  if (allowDocHistory) {
                     navigate(`/doc/editor/history/${detail.id}`);
                   }
                 },

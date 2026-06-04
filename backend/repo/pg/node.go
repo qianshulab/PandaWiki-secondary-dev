@@ -1409,3 +1409,70 @@ func (r *NodeRepository) GetNodeStats(ctx context.Context, kbId string) (*v1.Nod
 
 	return &stats, nil
 }
+
+func (r *NodeRepository) GetNodeReleaseHistoryList(ctx context.Context, kbID, nodeID string) ([]*domain.NodeReleaseListItem, error) {
+	var releases []*domain.NodeReleaseListItem
+	if err := r.db.WithContext(ctx).
+		Model(&domain.NodeRelease{}).
+		Joins("LEFT JOIN nodes ON nodes.id = node_releases.node_id AND nodes.kb_id = node_releases.kb_id").
+		Joins("LEFT JOIN users creator ON creator.id = nodes.creator_id").
+		Joins("LEFT JOIN users editor ON editor.id = node_releases.editor_id").
+		Joins("LEFT JOIN users publisher ON publisher.id = node_releases.publisher_id").
+		Joins(`LEFT JOIN LATERAL (
+			SELECT kb_releases.id, kb_releases.tag, kb_releases.message
+			FROM kb_release_node_releases
+			JOIN kb_releases ON kb_releases.id = kb_release_node_releases.release_id
+			WHERE kb_release_node_releases.node_release_id = node_releases.id
+			ORDER BY kb_releases.created_at DESC
+			LIMIT 1
+		) latest_release ON true`).
+		Where("node_releases.kb_id = ? AND node_releases.node_id = ?", kbID, nodeID).
+		Select(`node_releases.id AS id,
+			node_releases.kb_id AS kb_id,
+			node_releases.node_id AS node_id,
+			node_releases.name AS name,
+			node_releases.meta AS meta,
+			nodes.creator_id AS creator_id,
+			COALESCE(creator.account, '') AS creator_account,
+			node_releases.editor_id AS editor_id,
+			COALESCE(editor.account, '') AS editor_account,
+			node_releases.publisher_id AS publisher_id,
+			COALESCE(publisher.account, '') AS publisher_account,
+			COALESCE(latest_release.id, '') AS release_id,
+			COALESCE(latest_release.tag, '') AS release_name,
+			COALESCE(latest_release.message, '') AS release_message,
+			node_releases.updated_at AS updated_at`).
+		Order("node_releases.updated_at DESC").
+		Find(&releases).Error; err != nil {
+		return nil, err
+	}
+	return releases, nil
+}
+
+func (r *NodeRepository) GetNodeReleaseHistoryDetail(ctx context.Context, kbID, id string) (*domain.GetNodeReleaseDetailResp, error) {
+	var release domain.GetNodeReleaseDetailResp
+	if err := r.db.WithContext(ctx).
+		Model(&domain.NodeRelease{}).
+		Joins("LEFT JOIN nodes ON nodes.id = node_releases.node_id AND nodes.kb_id = node_releases.kb_id").
+		Joins("LEFT JOIN users creator ON creator.id = nodes.creator_id").
+		Joins("LEFT JOIN users editor ON editor.id = node_releases.editor_id").
+		Joins("LEFT JOIN users publisher ON publisher.id = node_releases.publisher_id").
+		Where("node_releases.kb_id = ? AND node_releases.id = ?", kbID, id).
+		Select(`node_releases.id AS id,
+			node_releases.kb_id AS kb_id,
+			node_releases.node_id AS node_id,
+			node_releases.name AS name,
+			node_releases.content AS content,
+			node_releases.meta AS meta,
+			nodes.creator_id AS creator_id,
+			COALESCE(creator.account, '') AS creator_account,
+			node_releases.editor_id AS editor_id,
+			COALESCE(editor.account, '') AS editor_account,
+			node_releases.publisher_id AS publisher_id,
+			COALESCE(publisher.account, '') AS publisher_account,
+			node_releases.updated_at AS updated_at`).
+		First(&release).Error; err != nil {
+		return nil, err
+	}
+	return &release, nil
+}

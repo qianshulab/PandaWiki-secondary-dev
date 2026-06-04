@@ -586,8 +586,11 @@ func (u *NodeUsecase) GetNodePermissionsByID(ctx context.Context, id, kbID strin
 	return resp, err
 }
 
-func (u *NodeUsecase) ValidateNodePermissionsEdit(req v1.NodePermissionEditReq, edition consts.LicenseEdition) error {
-	if !slices.Contains([]consts.LicenseEdition{consts.LicenseEditionBusiness, consts.LicenseEditionEnterprise}, edition) {
+func (u *NodeUsecase) ValidateNodePermissionsEdit(req v1.NodePermissionEditReq, allowPartial bool) error {
+	if req.Permissions == nil {
+		return nil
+	}
+	if !allowPartial {
 		if req.Permissions.Answerable == consts.NodeAccessPermPartial || req.Permissions.Visitable == consts.NodeAccessPermPartial || req.Permissions.Visible == consts.NodeAccessPermPartial {
 			return domain.ErrPermissionDenied
 		}
@@ -618,13 +621,19 @@ func (u *NodeUsecase) NodePermissionsEdit(ctx context.Context, req v1.NodePermis
 		nodeVectorContentRequests := make([]*domain.NodeReleaseVectorRequest, 0)
 
 		var groupIds []int
-		switch req.Permissions.Answerable {
-		case consts.NodeAccessPermOpen:
-			groupIds = nil
-		case consts.NodeAccessPermPartial:
-			groupIds = *req.AnswerableGroups
-		case consts.NodeAccessPermClosed:
-			groupIds = make([]int, 0)
+		if req.Permissions != nil {
+			switch req.Permissions.Answerable {
+			case consts.NodeAccessPermOpen:
+				groupIds = nil
+			case consts.NodeAccessPermPartial:
+				if req.AnswerableGroups != nil {
+					groupIds = *req.AnswerableGroups
+				} else {
+					groupIds = make([]int, 0)
+				}
+			case consts.NodeAccessPermClosed:
+				groupIds = make([]int, 0)
+			}
 		}
 		for _, nodeRelease := range nodeReleases {
 			if nodeRelease.DocID == "" {
@@ -872,4 +881,18 @@ func (u *NodeUsecase) GetNodeListGroupByNav(ctx context.Context, req v1.NodeList
 	}
 
 	return result, nil
+}
+
+func (u *NodeUsecase) GetNodeReleaseHistoryList(ctx context.Context, req *domain.GetNodeReleaseListReq) ([]*domain.NodeReleaseListItem, error) {
+	if !domain.GetBaseEditionLimitation(ctx).AllowDocHistory {
+		return nil, domain.ErrPermissionDenied
+	}
+	return u.nodeRepo.GetNodeReleaseHistoryList(ctx, req.KBID, req.NodeID)
+}
+
+func (u *NodeUsecase) GetNodeReleaseHistoryDetail(ctx context.Context, req *domain.GetNodeReleaseDetailReq) (*domain.GetNodeReleaseDetailResp, error) {
+	if !domain.GetBaseEditionLimitation(ctx).AllowDocHistory {
+		return nil, domain.ErrPermissionDenied
+	}
+	return u.nodeRepo.GetNodeReleaseHistoryDetail(ctx, req.KBID, req.ID)
 }

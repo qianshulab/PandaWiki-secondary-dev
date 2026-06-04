@@ -17,7 +17,7 @@ import { FormItem, SettingCardItem, SecretTextField } from './Common';
 import { DomainAppDetailResp } from '@/request/types';
 import { message } from '@ctzhian/ui';
 import { BUSINESS_VERSION_PERMISSION } from '@/constant/version';
-import { useAppSelector } from '@/store';
+import { useLicensePolicyFlag } from '@/hooks';
 
 const CardRobotApi = ({
   kb,
@@ -28,7 +28,10 @@ const CardRobotApi = ({
 }) => {
   const [isEdit, setIsEdit] = useState(false);
   const [detail, setDetail] = useState<DomainAppDetailResp | null>(null);
-  const { license } = useAppSelector(state => state.config);
+  const allowOpenAIBot = useLicensePolicyFlag(
+    'allow_open_ai_bot_settings',
+    BUSINESS_VERSION_PERMISSION,
+  );
   const {
     control,
     handleSubmit,
@@ -109,7 +112,10 @@ const CardRobotApi = ({
       }
       onSubmit={onSubmit}
     >
-      <FormItem label='问答机器人 API' permission={BUSINESS_VERSION_PERMISSION}>
+      <FormItem
+        label='问答机器人 API'
+        permission={allowOpenAIBot ? undefined : BUSINESS_VERSION_PERMISSION}
+      >
         <FormControl>
           <Controller
             control={control}
@@ -140,7 +146,7 @@ const CardRobotApi = ({
         </FormControl>
       </FormItem>
 
-      {isEnabled && BUSINESS_VERSION_PERMISSION.includes(license.edition!) && (
+      {isEnabled && allowOpenAIBot && (
         <>
           <FormItem label='API Token' required>
             <Controller

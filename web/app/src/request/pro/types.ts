@@ -124,9 +124,29 @@ export interface DomainIPAddress {
   province?: string;
 }
 
+export interface DomainBaseEditionLimitation {
+  allow_admin_perm?: boolean;
+  allow_advanced_bot?: boolean;
+  allow_comment_audit?: boolean;
+  allow_contribution?: boolean;
+  allow_copy_protection?: boolean;
+  allow_custom_copyright?: boolean;
+  allow_doc_history?: boolean;
+  allow_mcp_server?: boolean;
+  allow_node_stats?: boolean;
+  allow_open_ai_bot_settings?: boolean;
+  allow_visitor_permission_control?: boolean;
+  allow_watermark?: boolean;
+  max_admin?: number;
+  max_kb?: number;
+  max_node?: number;
+  max_sso_users?: number;
+}
+
 export interface DomainLicenseResp {
   edition?: ConstsLicenseEdition;
   expired_at?: number;
+  limitation?: DomainBaseEditionLimitation;
   started_at?: number;
   state?: number;
 }

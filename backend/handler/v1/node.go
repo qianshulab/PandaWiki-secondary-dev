@@ -61,6 +61,10 @@ func NewNodeHandler(
 	group.GET("/permission", h.NodePermission)
 	group.PATCH("/permission/edit", h.NodePermissionEdit)
 
+	proGroup := echo.Group("/api/pro/v1/node", h.auth.Authorize, h.auth.ValidateKBUserPerm(consts.UserKBPermissionDocManage))
+	proGroup.GET("/release/list", h.GetNodeReleaseList)
+	proGroup.GET("/release/detail", h.GetNodeReleaseDetail)
+
 	return h
 }
 
@@ -523,11 +527,11 @@ func (h *NodeHandler) NodePermissionEdit(c echo.Context) error {
 		return h.NewResponseWithError(c, "validate request params failed", err)
 	}
 
-	if err := h.usecase.ValidateNodePermissionsEdit(req, consts.GetLicenseEdition(c)); err != nil {
+	ctx := c.Request().Context()
+	if err := h.usecase.ValidateNodePermissionsEdit(req, domain.GetBaseEditionLimitation(ctx).AllowVisitorPermissionControl); err != nil {
 		return h.NewResponseWithError(c, "validate node permission failed", err)
 	}
 
-	ctx := c.Request().Context()
 	err := h.usecase.NodePermissionsEdit(ctx, req)
 	if err != nil {
 		return h.NewResponseWithError(c, "update node permission failed", err)
@@ -562,4 +566,62 @@ func (h *NodeHandler) NodeRestudy(c echo.Context) error {
 	}
 
 	return h.NewResponseWithData(c, nil)
+}
+
+// GetNodeReleaseList
+//
+//	@Summary		Get Node Release List
+//	@Description	Get Node Release List
+//	@Tags			node
+//	@Accept			json
+//	@Produce		json
+//	@Security		bearerAuth
+//	@Param			params	query		domain.GetNodeReleaseListReq	true	"Params"
+//	@Success		200		{object}	domain.PWResponse{data=[]domain.NodeReleaseListItem}
+//	@Router			/api/pro/v1/node/release/list [get]
+func (h *NodeHandler) GetNodeReleaseList(c echo.Context) error {
+	var req domain.GetNodeReleaseListReq
+	if err := c.Bind(&req); err != nil {
+		return h.NewResponseWithError(c, "invalid request", err)
+	}
+	if err := c.Validate(req); err != nil {
+		return h.NewResponseWithError(c, "validate request params failed", err)
+	}
+	releases, err := h.usecase.GetNodeReleaseHistoryList(c.Request().Context(), &req)
+	if err != nil {
+		if errors.Is(err, domain.ErrPermissionDenied) {
+			return h.NewResponseWithErrCode(c, domain.ErrCodePermissionDenied)
+		}
+		return h.NewResponseWithError(c, "get node release list failed", err)
+	}
+	return h.NewResponseWithData(c, releases)
+}
+
+// GetNodeReleaseDetail
+//
+//	@Summary		Get Node Release Detail
+//	@Description	Get Node Release Detail
+//	@Tags			node
+//	@Accept			json
+//	@Produce		json
+//	@Security		bearerAuth
+//	@Param			params	query		domain.GetNodeReleaseDetailReq	true	"Params"
+//	@Success		200		{object}	domain.PWResponse{data=domain.GetNodeReleaseDetailResp}
+//	@Router			/api/pro/v1/node/release/detail [get]
+func (h *NodeHandler) GetNodeReleaseDetail(c echo.Context) error {
+	var req domain.GetNodeReleaseDetailReq
+	if err := c.Bind(&req); err != nil {
+		return h.NewResponseWithError(c, "invalid request", err)
+	}
+	if err := c.Validate(req); err != nil {
+		return h.NewResponseWithError(c, "validate request params failed", err)
+	}
+	release, err := h.usecase.GetNodeReleaseHistoryDetail(c.Request().Context(), &req)
+	if err != nil {
+		if errors.Is(err, domain.ErrPermissionDenied) {
+			return h.NewResponseWithErrCode(c, domain.ErrCodePermissionDenied)
+		}
+		return h.NewResponseWithError(c, "get node release detail failed", err)
+	}
+	return h.NewResponseWithData(c, release)
 }
