@@ -189,3 +189,25 @@ feature_policy:
   - `backend`: `go test ./... -run '^$'` 通过。
   - `web/admin`: 通过 WSL 隔离构建脚本 `PANDAWIKI_FRONTEND_TARGET=admin scripts/e2e/build_frontend_wsl.sh` 通过，并已在 UI 录制验收中使用该构建产物。
   - `web/app`: 通过 WSL 隔离构建脚本 `scripts/e2e/build_frontend_wsl.sh` 通过。
+
+## 8. 后续阶段落地与验收状态
+
+截至 `2026-06-04 14:10 Asia/Shanghai`：
+
+- 第二阶段已补齐并验收：水印、内容复制保护、OpenAI API Bot 设置、MCP Server 设置、文档历史版本列表/详情、前台贡献投稿/后台审核、访客 partial ACL。
+- 第三阶段本轮已补齐高优能力：
+  - MCP Server `/mcp` JSON-RPC 2.0 服务端：`initialize`、`tools/list`、`tools/call`、`ping`，支持口令鉴权和发布文档检索。
+  - OpenAI API 兼容增强：Authorization CORS、HTTP 错误码、`kb_id` query 兜底、usage 估算、流式 `[DONE]`。
+  - 文档历史版本恢复：新增 `POST /api/pro/v1/node/release/restore`，前端“还原”接入服务端恢复，避免元数据遗漏。
+  - 屏蔽词 DFA 运行时兜底初始化，修复新增屏蔽词后 RAG-only 检索可能空指针的问题。
+  - OpenAI API / MCP Server bot auth 纳入机器人认证源，避免占用 SSO 用户额度，并优先按 `kb_id + source_type` 解析机器人身份，避免多知识库串权。
+- API 自动化验收结果：`reports/e2e-first-stage-report.json`，`16 PASS / 0 FAIL`。
+- UI 录制验收结果：`reports/ui-e2e-report.json`，`15 PASS / 0 FAIL`，`network_errors=[]`，`console_errors=[]`。
+- E2E 稳定性：fake Caddy Admin Socket 与前端隔离构建目录均已按 UID 隔离并容错清理，避免 WSL 跨用户残留导致复验失败。
+- 构建验收：
+  - `backend`: `go test ./... -run '^$'` 通过。
+  - `web/admin`: 在 UI 录制验收前隔离构建通过。
+  - `web/app`: `scripts/e2e/build_frontend_wsl.sh` 通过。
+- 回滚点：
+  - `checkpoint/secondary-dev-phase2-e2e-pass-20260604-1100`
+  - `checkpoint/secondary-dev-phase3-start-20260604-continue`

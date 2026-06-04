@@ -66,6 +66,8 @@ func (t AppType) ToSourceType() consts.SourceType {
 		return consts.SourceTypeOpenAIAPI
 	case AppTypeLarkBot:
 		return consts.SourceTypeLarkBot
+	case AppTypeMcpServer:
+		return consts.SourceTypeMcpServer
 	default:
 		return ""
 	}

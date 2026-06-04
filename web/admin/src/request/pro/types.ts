@@ -174,6 +174,15 @@ export interface DomainNodeReleaseListItem {
   updated_at?: string;
 }
 
+export interface DomainRestoreNodeReleaseReq {
+  id: string;
+  kb_id: string;
+}
+
+export interface DomainRestoreNodeReleaseResp {
+  node_id?: string;
+}
+
 export interface DomainPWResponse {
   code?: number;
   data?: unknown;

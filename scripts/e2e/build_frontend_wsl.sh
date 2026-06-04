@@ -6,7 +6,7 @@ TARGET="${PANDAWIKI_FRONTEND_TARGET:-app}"
 INSTALL_DEPS="${PANDAWIKI_FRONTEND_INSTALL:-1}"
 FORCE_INSTALL="${PANDAWIKI_FRONTEND_FORCE_INSTALL:-0}"
 ISOLATED="${PANDAWIKI_FRONTEND_ISOLATED:-1}"
-BUILD_PARENT="${PANDAWIKI_FRONTEND_BUILD_PARENT:-/tmp/pandawiki-frontend-build}"
+BUILD_PARENT="${PANDAWIKI_FRONTEND_BUILD_PARENT:-/tmp/pandawiki-frontend-build-${UID:-$(id -u)}}"
 
 export PATH="/usr/local/node/bin:/usr/local/go/bin:$PATH"
 export CI="${CI:-true}"

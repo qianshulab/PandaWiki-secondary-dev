@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -185,7 +186,7 @@ func (u *ChatUsecase) Chat(ctx context.Context, req *domain.ChatRequest) (<-chan
 			return
 		}
 		if len(blockWords) > 0 { // check --> filter
-			questionFilter := utils.GetDFA(req.KBID)
+			questionFilter := ensureDFA(req.KBID, blockWords)
 			if err := questionFilter.DFA.Check(req.Message); err != nil { // exist then return err
 				answer := "**您的问题包含敏感词, AI 无法回答您的问题。**"
 				eventCh <- domain.SSEEvent{Type: "error", Content: answer}
@@ -211,10 +212,7 @@ func (u *ChatUsecase) Chat(ctx context.Context, req *domain.ChatRequest) (<-chan
 		}
 
 		if req.Info.UserInfo.AuthUserID == 0 {
-			auth, _ := u.AuthRepo.GetAuthBySourceType(ctx, req.AppType.ToSourceType())
-			if auth != nil {
-				req.Info.UserInfo.AuthUserID = auth.ID
-			}
+			req.Info.UserInfo.AuthUserID = u.resolveAppAuthUserID(ctx, req.KBID, req.AppType)
 		}
 
 		groupIds, err := u.AuthRepo.GetAuthGroupIdsWithParentsByAuthId(ctx, req.Info.UserInfo.AuthUserID)
@@ -319,7 +317,7 @@ func (u *ChatUsecase) ChatRagOnly(ctx context.Context, req *domain.ChatRagOnlyRe
 			return
 		}
 		if len(blockWords) > 0 { // check --> filter
-			questionFilter := utils.GetDFA(req.KBID)
+			questionFilter := ensureDFA(req.KBID, blockWords)
 			if err := questionFilter.DFA.Check(req.Message); err != nil { // exist then return err
 				answer := "**您的问题包含敏感词, AI 无法回答您的问题。**"
 				eventCh <- domain.SSEEvent{Type: "error", Content: answer}
@@ -328,10 +326,7 @@ func (u *ChatUsecase) ChatRagOnly(ctx context.Context, req *domain.ChatRagOnlyRe
 		}
 
 		if req.UserInfo.AuthUserID == 0 {
-			auth, _ := u.AuthRepo.GetAuthBySourceType(ctx, req.AppType.ToSourceType())
-			if auth != nil {
-				req.UserInfo.AuthUserID = auth.ID
-			}
+			req.UserInfo.AuthUserID = u.resolveAppAuthUserID(ctx, req.KBID, req.AppType)
 		}
 
 		groupIds, err := u.AuthRepo.GetAuthGroupIdsWithParentsByAuthId(ctx, req.UserInfo.AuthUserID)
@@ -385,7 +380,7 @@ func (u *ChatUsecase) CreateAcOnChunk(ctx context.Context, kbID string, answer *
 	}
 
 	// get filter --> exist
-	filter := utils.GetDFA(kbID)
+	filter := ensureDFA(kbID, blockWords)
 
 	onChunk := func(ctx context.Context, dataType, chunk string) error {
 		buffer.WriteString(chunk)
@@ -431,6 +426,30 @@ func (u *ChatUsecase) CreateAcOnChunk(ctx context.Context, kbID string, answer *
 func (u *ChatUsecase) replaceWithSimpleString(content string, filter *utils.DFA) string {
 	r1 := filter.Filter(content)
 	return r1
+}
+
+func ensureDFA(kbID string, words []string) *utils.DFAInstance {
+	filter := utils.GetDFA(kbID)
+	if filter == nil || filter.DFA == nil {
+		utils.InitDFA(kbID, words)
+		filter = utils.GetDFA(kbID)
+	}
+	return filter
+}
+
+func (u *ChatUsecase) resolveAppAuthUserID(ctx context.Context, kbID string, appType domain.AppType) uint {
+	sourceType := appType.ToSourceType()
+	if sourceType == "" {
+		return 0
+	}
+	if auth, err := u.AuthRepo.GetAuthByKBIDAndSourceType(ctx, kbID, sourceType); err == nil && auth != nil {
+		return auth.ID
+	}
+	// Backward compatibility for legacy data created before bot auth became KB-scoped.
+	if auth, err := u.AuthRepo.GetAuthBySourceType(ctx, sourceType); err == nil && auth != nil {
+		return auth.ID
+	}
+	return 0
 }
 
 func (u *ChatUsecase) Search(ctx context.Context, req *domain.ChatSearchReq) (*domain.ChatSearchResp, error) {
@@ -502,4 +521,124 @@ func (u *ChatUsecase) Search(ctx context.Context, req *domain.ChatSearchReq) (*d
 		resp.NodeResult = append(resp.NodeResult, chunkResult)
 	}
 	return &resp, nil
+}
+
+func (u *ChatUsecase) RetrieveDocsForMCP(ctx context.Context, kbID, queryText string, limit int) (string, error) {
+	if limit <= 0 || limit > 20 {
+		limit = 5
+	}
+
+	ragCtx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	defer cancel()
+	if content, err := u.retrieveDocsFromRAG(ragCtx, kbID, queryText); err == nil && strings.TrimSpace(content) != "" {
+		return content, nil
+	}
+
+	kb, err := u.kbRepo.GetKnowledgeBaseByID(ctx, kbID)
+	if err != nil {
+		return "", err
+	}
+
+	authID := uint(0)
+	auth, _ := u.AuthRepo.GetAuthByKBIDAndSourceType(ctx, kbID, consts.SourceTypeMcpServer)
+	if auth != nil {
+		authID = auth.ID
+	}
+	groupIds, err := u.AuthRepo.GetAuthGroupIdsWithParentsByAuthId(ctx, authID)
+	if err != nil {
+		return "", err
+	}
+	userGroupIds := lo.Map(groupIds, func(id int, _ int) uint {
+		return uint(id)
+	})
+	visitableNodeIds := make([]string, 0)
+	if len(userGroupIds) > 0 {
+		visitableNodeGroups, err := u.nodeRepo.GetNodeGroupsByGroupIdsPerm(ctx, userGroupIds, consts.NodePermNameVisitable)
+		if err != nil {
+			return "", err
+		}
+		visitableNodeIds = lo.Map(visitableNodeGroups, func(v domain.NodeAuthGroup, _ int) string {
+			return v.NodeID
+		})
+	}
+
+	nodes, err := u.nodeRepo.SearchReleasedDocumentNodes(ctx, kbID, queryText, limit)
+	if err != nil {
+		return "", err
+	}
+
+	var builder strings.Builder
+	written := 0
+	for _, node := range nodes {
+		switch node.Permissions.Visitable {
+		case consts.NodeAccessPermClosed:
+			continue
+		case consts.NodeAccessPermPartial:
+			if !slices.Contains(visitableNodeIds, node.ID) {
+				continue
+			}
+		}
+
+		excerpt := normalizeMCPDocContent(node.Content)
+		if excerpt == "" {
+			excerpt = node.Meta.Summary
+		}
+		if len([]rune(excerpt)) > 1200 {
+			excerpt = string([]rune(excerpt)[:1200]) + "..."
+		}
+
+		if written > 0 {
+			builder.WriteString("\n\n")
+		}
+		builder.WriteString(fmt.Sprintf("### %s\n", node.Name))
+		builder.WriteString(fmt.Sprintf("- node_id: %s\n", node.ID))
+		if kb.AccessSettings.BaseURL != "" {
+			builder.WriteString(fmt.Sprintf("- url: %s/node/%s\n", strings.TrimRight(kb.AccessSettings.BaseURL, "/"), node.ID))
+		}
+		if node.Meta.Summary != "" {
+			builder.WriteString(fmt.Sprintf("- summary: %s\n", node.Meta.Summary))
+		}
+		builder.WriteString("\n")
+		builder.WriteString(excerpt)
+		written++
+	}
+
+	if written == 0 {
+		return "未检索到可访问的相关文档。", nil
+	}
+	return builder.String(), nil
+}
+
+func (u *ChatUsecase) retrieveDocsFromRAG(ctx context.Context, kbID, queryText string) (string, error) {
+	eventCh, err := u.ChatRagOnly(ctx, &domain.ChatRagOnlyRequest{
+		Message: queryText,
+		KBID:    kbID,
+		AppType: domain.AppTypeMcpServer,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	var content strings.Builder
+	for event := range eventCh {
+		switch event.Type {
+		case "data":
+			content.WriteString(event.Content)
+		case "error":
+			return "", fmt.Errorf("mcp rag retrieve failed: %s", event.Content)
+		case "done":
+			return content.String(), nil
+		}
+	}
+	return content.String(), nil
+}
+
+var htmlTagRegexp = regexp.MustCompile(`<[^>]+>`)
+
+func normalizeMCPDocContent(content string) string {
+	content = htmlTagRegexp.ReplaceAllString(content, " ")
+	replacer := strings.NewReplacer("&nbsp;", " ", "&amp;", "&", "&lt;", "<", "&gt;", ">", "&quot;", "\"", "&#39;", "'")
+	content = replacer.Replace(content)
+	fields := strings.Fields(content)
+	return strings.Join(fields, " ")
 }

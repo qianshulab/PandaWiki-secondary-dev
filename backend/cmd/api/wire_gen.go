@@ -193,6 +193,7 @@ func createApp() (*App, error) {
 	openapiV1Handler := share.NewOpenapiV1Handler(echo, baseHandler, logger, authUsecase, appUsecase)
 	shareCommonHandler := share.NewShareCommonHandler(echo, baseHandler, logger, fileUsecase)
 	shareContributeHandler := share.NewShareContributeHandler(echo, baseHandler, logger, contributeUsecase)
+	shareMCPHandler := share.NewShareMCPHandler(echo, baseHandler, logger, appUsecase, chatUsecase)
 	shareHandler := &share.ShareHandler{
 		ShareNodeHandler:         shareNodeHandler,
 		ShareNavHandler:          shareNavHandler,
@@ -208,6 +209,7 @@ func createApp() (*App, error) {
 		OpenapiV1Handler:         openapiV1Handler,
 		ShareCommonHandler:       shareCommonHandler,
 		ShareContributeHandler:   shareContributeHandler,
+		ShareMCPHandler:          shareMCPHandler,
 	}
 	mcpRepository := pg2.NewMCPRepository(db, logger)
 	client, err := telemetry.NewClient(logger, knowledgeBaseRepository, modelUsecase, userUsecase, nodeRepository, conversationRepository, mcpRepository, configConfig)

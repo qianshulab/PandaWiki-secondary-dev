@@ -64,6 +64,7 @@ func NewNodeHandler(
 	proGroup := echo.Group("/api/pro/v1/node", h.auth.Authorize, h.auth.ValidateKBUserPerm(consts.UserKBPermissionDocManage))
 	proGroup.GET("/release/list", h.GetNodeReleaseList)
 	proGroup.GET("/release/detail", h.GetNodeReleaseDetail)
+	proGroup.POST("/release/restore", h.RestoreNodeRelease)
 
 	return h
 }
@@ -624,4 +625,37 @@ func (h *NodeHandler) GetNodeReleaseDetail(c echo.Context) error {
 		return h.NewResponseWithError(c, "get node release detail failed", err)
 	}
 	return h.NewResponseWithData(c, release)
+}
+
+// RestoreNodeRelease
+//
+//	@Summary		Restore Node Release
+//	@Description	Restore Node Release To Draft
+//	@Tags			node
+//	@Accept			json
+//	@Produce		json
+//	@Security		bearerAuth
+//	@Param			body	body		domain.RestoreNodeReleaseReq	true	"Params"
+//	@Success		200		{object}	domain.PWResponse{data=domain.RestoreNodeReleaseResp}
+//	@Router			/api/pro/v1/node/release/restore [post]
+func (h *NodeHandler) RestoreNodeRelease(c echo.Context) error {
+	authInfo := domain.GetAuthInfoFromCtx(c.Request().Context())
+	if authInfo == nil {
+		return h.NewResponseWithError(c, "authInfo not found in context", nil)
+	}
+	var req domain.RestoreNodeReleaseReq
+	if err := c.Bind(&req); err != nil {
+		return h.NewResponseWithError(c, "invalid request", err)
+	}
+	if err := c.Validate(req); err != nil {
+		return h.NewResponseWithError(c, "validate request params failed", err)
+	}
+	resp, err := h.usecase.RestoreNodeRelease(c.Request().Context(), &req, authInfo.UserId)
+	if err != nil {
+		if errors.Is(err, domain.ErrPermissionDenied) {
+			return h.NewResponseWithErrCode(c, domain.ErrCodePermissionDenied)
+		}
+		return h.NewResponseWithError(c, "restore node release failed", err)
+	}
+	return h.NewResponseWithData(c, resp)
 }

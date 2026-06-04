@@ -3,7 +3,7 @@
   "passed": 15,
   "failed": 0,
   "trace": "reports/ui-e2e-trace/ui-e2e-trace.zip",
-  "video": "reports/ui-e2e-video/page@40d374d8f3c9cb4f7dc1bceac14503de.webm",
+  "video": "reports/ui-e2e-video/page@4a48614ba0dfa4d8959629eb6b3ba026.webm",
   "screenshots_dir": "reports/ui-e2e-screenshots",
   "network_errors": [],
   "console_errors": [],
@@ -11,91 +11,91 @@
     {
       "name": "登录和专业版状态",
       "status": "PASS",
-      "elapsed_ms": 1991,
+      "elapsed_ms": 1917,
       "screenshot": "reports/ui-e2e-screenshots/01-登录和专业版状态.png"
     },
     {
       "name": "知识库数量超过免费版限制",
       "status": "PASS",
-      "elapsed_ms": 1216,
+      "elapsed_ms": 1280,
       "screenshot": "reports/ui-e2e-screenshots/02-知识库数量超过免费版限制.png"
     },
     {
       "name": "文档节点超过 300 免费版限制",
       "status": "PASS",
-      "elapsed_ms": 1152,
+      "elapsed_ms": 1175,
       "screenshot": "reports/ui-e2e-screenshots/03-文档节点超过-300-免费版限制.png"
     },
     {
       "name": "统计页 7 天周期可点击",
       "status": "PASS",
-      "elapsed_ms": 2129,
+      "elapsed_ms": 2205,
       "screenshot": "reports/ui-e2e-screenshots/04-统计页-7-天周期可点击.png"
     },
     {
       "name": "自定义 Prompt 前端读写展示",
       "status": "PASS",
-      "elapsed_ms": 1073,
+      "elapsed_ms": 1104,
       "screenshot": "reports/ui-e2e-screenshots/05-自定义-Prompt-前端读写展示.png"
     },
     {
       "name": "内容合规屏蔽词前端展示",
       "status": "PASS",
-      "elapsed_ms": 1067,
+      "elapsed_ms": 1092,
       "screenshot": "reports/ui-e2e-screenshots/06-内容合规屏蔽词前端展示.png"
     },
     {
       "name": "评论审核设置前端可见",
       "status": "PASS",
-      "elapsed_ms": 1051,
+      "elapsed_ms": 1062,
       "screenshot": "reports/ui-e2e-screenshots/07-评论审核设置前端可见.png"
     },
     {
       "name": "子管理员权限拆分前端展示",
       "status": "PASS",
-      "elapsed_ms": 1068,
+      "elapsed_ms": 1064,
       "screenshot": "reports/ui-e2e-screenshots/08-子管理员权限拆分前端展示.png"
     },
     {
       "name": "API Token 前端创建并展示",
       "status": "PASS",
-      "elapsed_ms": 1271,
+      "elapsed_ms": 1327,
       "screenshot": "reports/ui-e2e-screenshots/09-API-Token-前端创建并展示.png"
     },
     {
       "name": "水印和内容复制保护前端展示",
       "status": "PASS",
-      "elapsed_ms": 1078,
+      "elapsed_ms": 1113,
       "screenshot": "reports/ui-e2e-screenshots/10-水印和内容复制保护前端展示.png"
     },
     {
       "name": "问答机器人 API 前端展示",
       "status": "PASS",
-      "elapsed_ms": 1203,
+      "elapsed_ms": 1198,
       "screenshot": "reports/ui-e2e-screenshots/11-问答机器人-API-前端展示.png"
     },
     {
       "name": "MCP Server 前端展示",
       "status": "PASS",
-      "elapsed_ms": 1099,
+      "elapsed_ms": 1111,
       "screenshot": "reports/ui-e2e-screenshots/12-MCP-Server-前端展示.png"
     },
     {
       "name": "文档历史版本前端展示",
       "status": "PASS",
-      "elapsed_ms": 1688,
+      "elapsed_ms": 1723,
       "screenshot": "reports/ui-e2e-screenshots/13-文档历史版本前端展示.png"
     },
     {
       "name": "贡献审核列表前端展示",
       "status": "PASS",
-      "elapsed_ms": 1189,
+      "elapsed_ms": 1193,
       "screenshot": "reports/ui-e2e-screenshots/14-贡献审核列表前端展示.png"
     },
     {
       "name": "浏览器端无 JS 异常和 API 5xx 错误",
       "status": "PASS",
-      "elapsed_ms": 52,
+      "elapsed_ms": 48,
       "screenshot": "reports/ui-e2e-screenshots/15-浏览器端无-JS-异常和-API-5xx-错误.png"
     }
   ]

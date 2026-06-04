@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -24,6 +25,12 @@ class Client:
         return payload.get("data"), payload
 
     def raw_request(self, method, path, data=None, query=None, headers=None):
+        status, resp_headers, raw = self.raw_http(method, path, data=data, query=query, headers=headers)
+        if status >= 400:
+            raise AssertionError(f"{method} {self.base + path} failed: HTTP {status}: {raw}")
+        return json.loads(raw) if raw else {}
+
+    def raw_http(self, method, path, data=None, query=None, headers=None):
         url = self.base + path
         if query:
             url += "?" + urllib.parse.urlencode(query, doseq=True)
@@ -39,7 +46,10 @@ class Client:
         try:
             with urllib.request.urlopen(req, timeout=60) as resp:
                 raw = resp.read().decode()
-                return json.loads(raw) if raw else {}
+                return resp.status, dict(resp.headers), raw
+        except urllib.error.HTTPError as exc:
+            raw = exc.read().decode()
+            return exc.code, dict(exc.headers), raw
         except Exception as exc:
             raise AssertionError(f"{method} {url} failed: {exc}") from exc
 
@@ -333,6 +343,90 @@ def main():
             query={"kb_id": state["kb1"], "id": release["id"]},
         )
         assert "# e2e doc" in detail.get("content", ""), detail
+        state["release_id"] = release["id"]
+
+    def node_release_restore():
+        c.request(
+            "PUT",
+            "/api/v1/node/detail",
+            {"id": state["node_id"], "kb_id": state["kb1"], "content": "# E2E changed draft\n"},
+        )
+        changed, _ = c.request("GET", "/api/v1/node/detail", query={"kb_id": state["kb1"], "id": state["node_id"], "format": "raw"})
+        assert "E2E changed draft" in changed.get("content", ""), changed
+        restored, _ = c.request(
+            "POST",
+            "/api/pro/v1/node/release/restore",
+            {"kb_id": state["kb1"], "id": state["release_id"]},
+        )
+        assert restored.get("node_id") == state["node_id"], restored
+        node, _ = c.request("GET", "/api/v1/node/detail", query={"kb_id": state["kb1"], "id": state["node_id"], "format": "raw"})
+        assert "# e2e doc" in node.get("content", ""), node
+        assert "E2E changed draft" not in node.get("content", ""), node
+
+    def openai_api_compatibility():
+        status, headers, _ = c.raw_http(
+            "OPTIONS",
+            "/share/v1/chat/completions",
+            headers={"X-KB-ID": state["kb1"]},
+        )
+        assert status == 200, status
+        assert "Authorization" in headers.get("Access-Control-Allow-Headers", ""), headers
+        payload = {"model": "pandawiki", "messages": [{"role": "user", "content": "hello"}]}
+        status, _, raw = c.raw_http(
+            "POST",
+            "/share/v1/chat/completions",
+            payload,
+            headers={"X-KB-ID": state["kb1"], "Authorization": ""},
+        )
+        assert status == 401, (status, raw)
+        data = json.loads(raw)
+        assert data.get("error", {}).get("type") == "invalid_request_error", data
+        status, _, raw = c.raw_http(
+            "POST",
+            "/share/v1/chat/completions",
+            payload,
+            headers={"X-KB-ID": state["kb1"], "Authorization": "Bearer wrong-secret"},
+        )
+        assert status == 401, (status, raw)
+        data = json.loads(raw)
+        assert data.get("error", {}).get("type") == "unauthorized", data
+
+    def mcp_server_jsonrpc():
+        req = {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
+        status, _, raw = c.raw_http("POST", "/mcp", req, query={"kb_id": state["kb1"]})
+        assert status == 401, (status, raw)
+        data = json.loads(raw)
+        assert data.get("error", {}).get("code") == -32001, data
+
+        status, _, raw = c.raw_http(
+            "POST",
+            "/mcp",
+            req,
+            query={"kb_id": state["kb1"]},
+            headers={"Authorization": "Bearer e2e-mcp-pass"},
+        )
+        assert status == 200, (status, raw)
+        data = json.loads(raw)
+        tools = data.get("result", {}).get("tools", [])
+        assert tools and tools[0]["name"] == "e2e_get_docs", data
+
+        call_req = {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {"name": "e2e_get_docs", "arguments": {"query": "e2e doc", "limit": 3}},
+        }
+        status, _, raw = c.raw_http(
+            "POST",
+            "/mcp",
+            call_req,
+            query={"kb_id": state["kb1"]},
+            headers={"Authorization": "Bearer e2e-mcp-pass"},
+        )
+        assert status == 200, (status, raw)
+        data = json.loads(raw)
+        text = data.get("result", {}).get("content", [{}])[0].get("text", "")
+        assert "e2e doc" in text.lower() or "e2e-doc" in text.lower(), data
 
     def visitor_permission_control():
         c.request(
@@ -435,6 +529,9 @@ def main():
         ("7-day statistics permission", stat_day_7),
         ("paid app settings: watermark/copy/openai/mcp/contribution", app_paid_feature_settings),
         ("document release history endpoints", node_release_history),
+        ("document release restore workflow", node_release_restore),
+        ("OpenAI API compatibility guards", openai_api_compatibility),
+        ("MCP Server JSON-RPC tools", mcp_server_jsonrpc),
         ("visitor permission control partial ACL", visitor_permission_control),
         ("contribution submit/list/detail/audit workflow", contribution_workflow),
     ]

@@ -169,6 +169,9 @@ func (u *AppUsecase) ValidateUpdateApp(ctx context.Context, id string, req *doma
 }
 
 func (u *AppUsecase) UpdateApp(ctx context.Context, id string, appRequest *domain.UpdateAppReq) error {
+	if appRequest == nil {
+		return fmt.Errorf("app request is required")
+	}
 	if appRequest != nil && appRequest.Settings != nil {
 		if err := u.handleBotAuths(ctx, id, appRequest.Settings); err != nil {
 			return err
@@ -917,6 +920,14 @@ func (u *AppUsecase) handleBotAuths(ctx context.Context, id string, newSettings 
 		if err := u.handleBotAuth(ctx, currentApp.KBID, currentApp.ID, &currentApp.Settings.OpenAIAPIBotSettings.IsEnabled,
 			&newSettings.OpenAIAPIBotSettings.IsEnabled, consts.SourceTypeOpenAIAPI); err != nil {
 			u.logger.Error("failed to handle openai api bot auth", log.Error(err))
+		}
+	}
+
+	// Handle MCP Server Account
+	if currentApp.Settings.MCPServerSettings.IsEnabled != newSettings.MCPServerSettings.IsEnabled {
+		if err := u.handleBotAuth(ctx, currentApp.KBID, currentApp.ID, &currentApp.Settings.MCPServerSettings.IsEnabled,
+			&newSettings.MCPServerSettings.IsEnabled, consts.SourceTypeMcpServer); err != nil {
+			u.logger.Error("failed to handle mcp server auth", log.Error(err))
 		}
 	}
 

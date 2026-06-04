@@ -15,6 +15,8 @@ import {
   DomainGetNodeReleaseDetailResp,
   DomainNodeReleaseListItem,
   DomainPWResponse,
+  DomainRestoreNodeReleaseReq,
+  DomainRestoreNodeReleaseResp,
   GetApiProV1NodeReleaseDetailParams,
   GetApiProV1NodeReleaseListParams,
 } from "./types";
@@ -74,6 +76,36 @@ export const getApiProV1NodeReleaseList = (
     path: `/api/pro/v1/node/release/list`,
     method: "GET",
     query: query,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description Restore Node Release To Draft
+ *
+ * @tags node
+ * @name postApiProV1NodeReleaseRestore
+ * @summary Restore Node Release
+ * @request POST:/api/pro/v1/node/release/restore
+ * @response `200` `(DomainPWResponse & {
+    data?: DomainRestoreNodeReleaseResp,
+
+})` OK
+ */
+
+export const postApiProV1NodeReleaseRestore = (
+  param: DomainRestoreNodeReleaseReq,
+  params: RequestParams = {},
+) =>
+  httpRequest<
+    DomainPWResponse & {
+      data?: DomainRestoreNodeReleaseResp;
+    }
+  >({
+    path: `/api/pro/v1/node/release/restore`,
+    method: "POST",
+    body: param,
     type: ContentType.Json,
     format: "json",
     ...params,

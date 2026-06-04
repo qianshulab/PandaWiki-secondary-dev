@@ -36,6 +36,8 @@ func (m *MigrationCreateBotAuth) Execute(tx *gorm.DB) error {
 		domain.AppTypeWechatServiceBot,
 		domain.AppTypeDisCordBot,
 		domain.AppTypeWechatOfficialAccount,
+		domain.AppTypeOpenAIAPI,
+		domain.AppTypeMcpServer,
 	}).Find(&apps).Error; err != nil {
 		return fmt.Errorf("failed to get apps: %w", err)
 	}
@@ -67,6 +69,10 @@ func (m *MigrationCreateBotAuth) Execute(tx *gorm.DB) error {
 			shouldCreateAuth = app.Settings.DiscordBotIsEnabled != nil && *app.Settings.DiscordBotIsEnabled
 		case domain.AppTypeWechatOfficialAccount:
 			shouldCreateAuth = app.Settings.WechatOfficialAccountIsEnabled != nil && *app.Settings.WechatOfficialAccountIsEnabled
+		case domain.AppTypeOpenAIAPI:
+			shouldCreateAuth = app.Settings.OpenAIAPIBotSettings.IsEnabled
+		case domain.AppTypeMcpServer:
+			shouldCreateAuth = app.Settings.MCPServerSettings.IsEnabled
 		}
 
 		if !shouldCreateAuth {

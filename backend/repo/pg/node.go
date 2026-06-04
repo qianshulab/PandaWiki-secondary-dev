@@ -1476,3 +1476,108 @@ func (r *NodeRepository) GetNodeReleaseHistoryDetail(ctx context.Context, kbID, 
 	}
 	return &release, nil
 }
+
+func (r *NodeRepository) RestoreNodeFromRelease(ctx context.Context, kbID, releaseID, userID string) (string, error) {
+	var nodeID string
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var release domain.NodeRelease
+		if err := tx.Model(&domain.NodeRelease{}).
+			Where("kb_id = ? AND id = ?", kbID, releaseID).
+			Clauses(clause.Locking{Strength: "UPDATE"}).
+			First(&release).Error; err != nil {
+			return err
+		}
+
+		var node domain.Node
+		if err := tx.Model(&domain.Node{}).
+			Where("kb_id = ? AND id = ?", kbID, release.NodeID).
+			Clauses(clause.Locking{Strength: "UPDATE"}).
+			First(&node).Error; err != nil {
+			return err
+		}
+
+		now := time.Now()
+		updateMap := map[string]any{
+			"name":       release.Name,
+			"content":    release.Content,
+			"meta":       release.Meta,
+			"editor_id":  userID,
+			"edit_time":  now,
+			"updated_at": now,
+		}
+		if node.Status != domain.NodeStatusUnreleased {
+			updateMap["status"] = domain.NodeStatusDraft
+		}
+
+		if err := tx.Model(&domain.Node{}).
+			Where("kb_id = ? AND id = ?", kbID, release.NodeID).
+			Updates(updateMap).Error; err != nil {
+			return err
+		}
+		nodeID = release.NodeID
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return nodeID, nil
+}
+
+func (r *NodeRepository) SearchReleasedDocumentNodes(ctx context.Context, kbID, queryText string, limit int) ([]*domain.NodeSearchResult, error) {
+	if limit <= 0 || limit > 20 {
+		limit = 5
+	}
+
+	var kbRelease domain.KBRelease
+	err := r.db.WithContext(ctx).
+		Model(&domain.KBRelease{}).
+		Where("kb_id = ?", kbID).
+		Order("created_at DESC").
+		First(&kbRelease).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	searchPattern := "%" + strings.TrimSpace(queryText) + "%"
+	releasedQuery := r.db.WithContext(ctx).
+		Model(&domain.KBReleaseNodeRelease{}).
+		Joins("JOIN node_releases ON node_releases.id = kb_release_node_releases.node_release_id").
+		Joins("JOIN nodes ON nodes.id = node_releases.node_id AND nodes.kb_id = node_releases.kb_id").
+		Where("node_releases.kb_id = ?", kbID).
+		Where("node_releases.type = ?", domain.NodeTypeDocument).
+		Select("node_releases.node_id AS id, node_releases.kb_id AS kb_id, node_releases.name AS name, node_releases.content AS content, node_releases.meta AS meta, nodes.permissions AS permissions, node_releases.updated_at AS updated_at").
+		Order("node_releases.updated_at DESC").
+		Limit(limit)
+
+	if kbRelease.ID != "" {
+		releasedQuery = releasedQuery.Where("kb_release_node_releases.release_id = ?", kbRelease.ID)
+	}
+	if strings.TrimSpace(queryText) != "" {
+		releasedQuery = releasedQuery.Where("node_releases.name ILIKE ? OR node_releases.content ILIKE ? OR node_releases.meta->>'summary' ILIKE ?", searchPattern, searchPattern, searchPattern)
+	}
+
+	var released []*domain.NodeSearchResult
+	if kbRelease.ID != "" {
+		if err := releasedQuery.Find(&released).Error; err != nil {
+			return nil, err
+		}
+		return released, nil
+	}
+
+	fallbackQuery := r.db.WithContext(ctx).
+		Model(&domain.Node{}).
+		Where("kb_id = ? AND type = ?", kbID, domain.NodeTypeDocument).
+		Where("status IN ?", []domain.NodeStatus{domain.NodeStatusPublished, domain.NodeStatusDraft}).
+		Select("id, kb_id, name, content, meta, permissions, updated_at").
+		Order("updated_at DESC").
+		Limit(limit)
+	if strings.TrimSpace(queryText) != "" {
+		fallbackQuery = fallbackQuery.Where("name ILIKE ? OR content ILIKE ? OR meta->>'summary' ILIKE ?", searchPattern, searchPattern, searchPattern)
+	}
+
+	var nodes []*domain.NodeSearchResult
+	if err := fallbackQuery.Find(&nodes).Error; err != nil {
+		return nil, err
+	}
+	return nodes, nil
+}

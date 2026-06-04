@@ -3,7 +3,7 @@ package consts
 type SourceType string
 
 var (
-	BotSourceTypes = []SourceType{SourceTypeWidget, SourceTypeDingtalkBot, SourceTypeFeishuBot, SourceTypeLarkBot, SourceTypeWechatBot, SourceTypeWechatServiceBot, SourceTypeDiscordBot, SourceTypeWechatOfficialAccount}
+	BotSourceTypes = []SourceType{SourceTypeWidget, SourceTypeDingtalkBot, SourceTypeFeishuBot, SourceTypeLarkBot, SourceTypeWechatBot, SourceTypeWechatServiceBot, SourceTypeDiscordBot, SourceTypeWechatOfficialAccount, SourceTypeOpenAIAPI, SourceTypeMcpServer}
 )
 
 const (
@@ -49,6 +49,8 @@ func (s SourceType) Name() string {
 		return "微信公众号"
 	case SourceTypeMcpServer:
 		return "MCP 服务器"
+	case SourceTypeOpenAIAPI:
+		return "OpenAI API 机器人"
 	default:
 		return ""
 	}

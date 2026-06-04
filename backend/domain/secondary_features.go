@@ -16,6 +16,15 @@ type GetNodeReleaseDetailReq struct {
 	ID   string `json:"id" query:"id" validate:"required"`
 }
 
+type RestoreNodeReleaseReq struct {
+	KBID string `json:"kb_id" validate:"required"`
+	ID   string `json:"id" validate:"required"`
+}
+
+type RestoreNodeReleaseResp struct {
+	NodeID string `json:"node_id"`
+}
+
 type NodeReleaseListItem struct {
 	ID               string    `json:"id"`
 	KBID             string    `json:"kb_id"`

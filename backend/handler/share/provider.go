@@ -21,6 +21,7 @@ type ShareHandler struct {
 	OpenapiV1Handler         *OpenapiV1Handler
 	ShareCommonHandler       *ShareCommonHandler
 	ShareContributeHandler   *ShareContributeHandler
+	ShareMCPHandler          *ShareMCPHandler
 }
 
 var ProviderSet = wire.NewSet(
@@ -40,6 +41,7 @@ var ProviderSet = wire.NewSet(
 	NewShareCommonHandler,
 	NewOpenapiV1Handler,
 	NewShareContributeHandler,
+	NewShareMCPHandler,
 
 	wire.Struct(new(ShareHandler), "*"),
 )

@@ -896,3 +896,14 @@ func (u *NodeUsecase) GetNodeReleaseHistoryDetail(ctx context.Context, req *doma
 	}
 	return u.nodeRepo.GetNodeReleaseHistoryDetail(ctx, req.KBID, req.ID)
 }
+
+func (u *NodeUsecase) RestoreNodeRelease(ctx context.Context, req *domain.RestoreNodeReleaseReq, userID string) (*domain.RestoreNodeReleaseResp, error) {
+	if !domain.GetBaseEditionLimitation(ctx).AllowDocHistory {
+		return nil, domain.ErrPermissionDenied
+	}
+	nodeID, err := u.nodeRepo.RestoreNodeFromRelease(ctx, req.KBID, req.ID, userID)
+	if err != nil {
+		return nil, err
+	}
+	return &domain.RestoreNodeReleaseResp{NodeID: nodeID}, nil
+}

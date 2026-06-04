@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="${PANDAWIKI_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 COMPOSE_FILE="$ROOT/deploy/e2e/docker-compose.yml"
 RUNTIME_DIR="$ROOT/.e2e-runtime"
-CADDY_SOCKET="${PANDAWIKI_E2E_CADDY_SOCKET:-/tmp/pandawiki-caddy-admin.sock}"
+CADDY_SOCKET="${PANDAWIKI_E2E_CADDY_SOCKET:-/tmp/pandawiki-caddy-admin-${UID:-$(id -u)}.sock}"
 
 compose() {
   if command -v docker-compose >/dev/null 2>&1; then
@@ -53,7 +53,7 @@ kill_by_cwd_and_pattern 'go run ../../cmd/api' "$ROOT/backend/store/pg"
 kill_by_cwd_and_pattern '/tmp/go-build.*/exe/api' "$ROOT/backend/store/pg"
 kill_by_cwd_and_pattern 'scripts/e2e/admin_static_proxy.py' "$ROOT"
 kill_api_port_if_owned_by_repo
-rm -f "$CADDY_SOCKET"
+rm -f "$CADDY_SOCKET" 2>/dev/null || true
 
 echo "[e2e] stop docker dependencies"
 if [ "${PANDAWIKI_E2E_DROP_VOLUMES:-0}" = "1" ]; then

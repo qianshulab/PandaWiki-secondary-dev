@@ -1,6 +1,6 @@
 {
   "base_url": "http://127.0.0.1:8000",
-  "passed": 13,
+  "passed": 16,
   "failed": 0,
   "results": [
     {
@@ -11,32 +11,32 @@
     {
       "name": "users over free admin limit",
       "status": "PASS",
-      "elapsed_ms": 185
+      "elapsed_ms": 146
     },
     {
       "name": "knowledge bases over free limit + admin permission split",
       "status": "PASS",
-      "elapsed_ms": 27
+      "elapsed_ms": 28
     },
     {
       "name": "nodes over 300 free limit",
       "status": "PASS",
-      "elapsed_ms": 1728
+      "elapsed_ms": 1790
     },
     {
       "name": "custom prompt get/put",
       "status": "PASS",
-      "elapsed_ms": 6
+      "elapsed_ms": 15
     },
     {
       "name": "block words get/post",
       "status": "PASS",
-      "elapsed_ms": 3
+      "elapsed_ms": 9
     },
     {
       "name": "api token CRUD",
       "status": "PASS",
-      "elapsed_ms": 14
+      "elapsed_ms": 22
     },
     {
       "name": "comment moderate endpoint",
@@ -51,17 +51,32 @@
     {
       "name": "paid app settings: watermark/copy/openai/mcp/contribution",
       "status": "PASS",
-      "elapsed_ms": 30
+      "elapsed_ms": 35
     },
     {
       "name": "document release history endpoints",
       "status": "PASS",
-      "elapsed_ms": 16
+      "elapsed_ms": 17
+    },
+    {
+      "name": "document release restore workflow",
+      "status": "PASS",
+      "elapsed_ms": 15
+    },
+    {
+      "name": "OpenAI API compatibility guards",
+      "status": "PASS",
+      "elapsed_ms": 3
+    },
+    {
+      "name": "MCP Server JSON-RPC tools",
+      "status": "PASS",
+      "elapsed_ms": 11
     },
     {
       "name": "visitor permission control partial ACL",
       "status": "PASS",
-      "elapsed_ms": 10
+      "elapsed_ms": 9
     },
     {
       "name": "contribution submit/list/detail/audit workflow",

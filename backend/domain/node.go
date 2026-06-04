@@ -218,6 +218,16 @@ type NodeContentChunkSSE struct {
 	NodePathNames []string `json:"node_path_names"`
 }
 
+type NodeSearchResult struct {
+	ID          string          `json:"id"`
+	KBID        string          `json:"kb_id"`
+	Name        string          `json:"name"`
+	Content     string          `json:"content"`
+	Meta        NodeMeta        `json:"meta" gorm:"type:jsonb"`
+	Permissions NodePermissions `json:"permissions" gorm:"type:jsonb"`
+	UpdatedAt   time.Time       `json:"updated_at"`
+}
+
 type RecommendNodeListResp struct {
 	ID             string                   `json:"id"`
 	NavId          string                   `json:"nav_id"`

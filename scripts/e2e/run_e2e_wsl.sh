@@ -7,7 +7,7 @@ RUNTIME_DIR="$ROOT/.e2e-runtime"
 mkdir -p "$RUNTIME_DIR" "$ROOT/reports"
 
 ADMIN_PASSWORD="${PANDAWIKI_E2E_ADMIN_PASSWORD:-PandaWiki_E2E_123456}"
-CADDY_SOCKET="${PANDAWIKI_E2E_CADDY_SOCKET:-/tmp/pandawiki-caddy-admin.sock}"
+CADDY_SOCKET="${PANDAWIKI_E2E_CADDY_SOCKET:-/tmp/pandawiki-caddy-admin-${UID:-$(id -u)}.sock}"
 
 log() {
   echo "[e2e] $*"
@@ -69,7 +69,7 @@ stop_local_processes() {
   kill_by_cwd_and_pattern '/tmp/go-build.*/exe/api' "$ROOT/backend/store/pg"
   kill_api_port_if_owned_by_repo
   sleep 1
-  rm -f "$CADDY_SOCKET"
+  rm -f "$CADDY_SOCKET" 2>/dev/null || true
 }
 
 cd "$ROOT"

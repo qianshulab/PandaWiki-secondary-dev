@@ -81,7 +81,7 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_E2E_RESET=0 /bin/bash "/mnt/d/AI Wo
 
 1. 校验/安装 Playwright Chromium；
 2. 重置 Docker 依赖并跑第一阶段 API E2E；
-3. 在 `/tmp/pandawiki-frontend-build` 隔离构建 `web/admin`；
+3. 在 `/tmp/pandawiki-frontend-build-<uid>` 隔离构建 `web/admin`；
 4. 启动 `http://127.0.0.1:5173` Admin 静态代理；
 5. 运行 Playwright UI 验收并生成截图、trace、视频。
 
@@ -107,7 +107,7 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_UI_INSTALL_PLAYWRIGHT_DEPS=1 /bin/b
 | MinIO API | `127.0.0.1:9000` |
 | MinIO Console | `127.0.0.1:9001` |
 | fake RAG | `http://127.0.0.1:5050` |
-| fake Caddy Admin | `/tmp/pandawiki-caddy-admin.sock` |
+| fake Caddy Admin | `/tmp/pandawiki-caddy-admin-<uid>.sock` |
 
 ## 6. 二开功能开关与回滚点
 
@@ -139,11 +139,19 @@ FEATURE_POLICY_ALLOW_VISITOR_PERMISSION_CONTROL=true
 git reset --hard checkpoint/first-stage-accepted-20260604-1011
 ```
 
+```powershell
+git reset --hard checkpoint/secondary-dev-phase2-e2e-pass-20260604-1100
+```
+
+```powershell
+git reset --hard checkpoint/secondary-dev-phase3-start-20260604-continue
+```
+
 ## 7. API E2E 验收项
 
-最近一次 API 验收时间：`2026-06-04 11:00 Asia/Shanghai`
+最近一次 API 验收时间：`2026-06-04 14:10 Asia/Shanghai`
 
-结果：`13 PASS / 0 FAIL`
+结果：`16 PASS / 0 FAIL`
 
 已覆盖：
 
@@ -158,8 +166,11 @@ git reset --hard checkpoint/first-stage-accepted-20260604-1011
 9. 7 日统计接口权限可用。
 10. 水印、内容复制保护、贡献开关、问答机器人 API、MCP Server 设置读写。
 11. 文档历史版本列表/详情接口。
-12. 访客权限控制 partial ACL。
-13. 贡献提交、列表、详情、审核采纳（新增/编辑）闭环。
+12. 文档历史版本恢复到草稿闭环。
+13. OpenAI API 兼容接口 CORS/鉴权错误码。
+14. MCP Server JSON-RPC `tools/list` / `tools/call` 与认证。
+15. 访客权限控制 partial ACL。
+16. 贡献提交、列表、详情、审核采纳（新增/编辑）闭环。
 
 报告文件：
 
@@ -169,7 +180,7 @@ reports/e2e-first-stage-report.json
 
 ## 8. UI 录制验收项
 
-最近一次 UI 录制验收时间：`2026-06-04 11:00 Asia/Shanghai`
+最近一次 UI 录制验收时间：`2026-06-04 14:10 Asia/Shanghai`
 
 结果：`15 PASS / 0 FAIL`，并确认 `network_errors=[]`、`console_errors=[]`。
 
@@ -197,7 +208,7 @@ reports/e2e-first-stage-report.json
 reports/ui-e2e-report.json
 reports/ui-e2e-screenshots/
 reports/ui-e2e-trace/ui-e2e-trace.zip
-reports/ui-e2e-video/page@40d374d8f3c9cb4f7dc1bceac14503de.webm
+reports/ui-e2e-video/page@4a48614ba0dfa4d8959629eb6b3ba026.webm
 ```
 
 ## 9. 前端构建验收
@@ -215,7 +226,7 @@ pnpm --filter panda-wiki-admin build
 
 `web/app` 使用 Next.js `output: standalone`，在当前 Windows 文件系统下直接构建曾出现 symlink `EPERM`。已改为通过 WSL/Linux 隔离目录构建验收，并补充 `postcss` 到 `web/app/package.json` 的 devDependencies，消除 Next standalone 外部依赖解析告警。
 
-脚本默认会把 `web` 复制到 `/tmp/pandawiki-frontend-build/web` 后构建，避免 WSL 的 `pnpm install` 覆盖当前 Windows 工作区的 `node_modules/.bin`。
+脚本默认会把 `web` 复制到 `/tmp/pandawiki-frontend-build-<uid>/web` 后构建，避免 WSL 的 `pnpm install` 覆盖当前 Windows 工作区的 `node_modules/.bin`。
 
 ```powershell
 wsl -d Ubuntu-22.04 -u root -- /bin/bash "/mnt/d/AI WorkSpace/PandaWiki/scripts/e2e/build_frontend_wsl.sh"
@@ -258,6 +269,10 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_E2E_DROP_VOLUMES=1 /bin/bash "/mnt/
 - `web/app` Windows standalone 构建的 symlink `EPERM`：通过 WSL/Linux 构建脚本验收。
 - Next standalone `postcss` 外部依赖告警：已在 `web/app/package.json` 增加 `postcss: 8.5.6`。
 - Admin 侧 API Token、内容合规屏蔽词仍按商业版 gating 的问题：已改为专业版可用。
+- 文档历史版本“还原”只覆盖正文的问题：已新增服务端恢复接口，统一恢复标题、正文、摘要、emoji/content_type 等元数据。
+- MCP Server 只有配置入口的问题：已新增 `/mcp` JSON-RPC 服务端、Tool 列表/调用、口令鉴权、发布文档检索。
+- OpenAI API 兼容接口 CORS 缺少 `Authorization`、错误码不标准、流式缺少 `[DONE]` 的问题：已修复。
+- 运行期新增屏蔽词后 DFA 未初始化导致 RAG-only 检索空指针的问题：已增加兜底初始化。
 - Go 本地迁移相对路径问题：E2E 脚本从 `backend/store/pg` 启动迁移和 API，匹配当前源码中的 `file://migration`。
 - 统计页空数据时浏览器报 `Cannot read properties of null (reading 'sort')`：已修复后端空切片返回与前端空值兼容，UI 录制复验无 JS 异常。
 - 文档数 UI 录制期望固定 `301`：贡献审核会新增文档，已改为校验 `>=301`，避免新增功能影响旧验收。
@@ -265,3 +280,6 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_E2E_DROP_VOLUMES=1 /bin/bash "/mnt/
 - 文档历史版本与编辑页历史入口残留商业版判断：已切换为 `allow_doc_history` 功能开关。
 - 问答机器人 API、内容复制保护前端残留商业版遮罩：已切换为对应功能开关。
 - Node 权限编辑在部分字段缺省时可能误触发空指针：已增加安全处理。
+- E2E fake Caddy Socket 使用固定 `/tmp` 路径时跨用户残留会导致清理失败：已改为按 UID 隔离的 `/tmp/pandawiki-caddy-admin-<uid>.sock`，并容错清理。
+- E2E 前端隔离构建目录使用固定 `/tmp/pandawiki-frontend-build` 时跨用户残留会导致清理失败：已改为按 UID 隔离的 `/tmp/pandawiki-frontend-build-<uid>`。
+- OpenAI API / MCP RAG 检索默认机器人认证按 source_type 全局匹配可能跨知识库串权：已优先按 `kb_id + source_type` 解析，保留旧数据兼容兜底。

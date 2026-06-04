@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="${PANDAWIKI_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 RUNTIME_DIR="$ROOT/.e2e-runtime"
-BUILD_PARENT="${PANDAWIKI_FRONTEND_BUILD_PARENT:-/tmp/pandawiki-frontend-build}"
+BUILD_PARENT="${PANDAWIKI_FRONTEND_BUILD_PARENT:-/tmp/pandawiki-frontend-build-${UID:-$(id -u)}}"
 ADMIN_DIST="${PANDAWIKI_ADMIN_DIST:-$BUILD_PARENT/web/admin/dist}"
 ADMIN_HOST="${PANDAWIKI_ADMIN_HOST:-127.0.0.1}"
 ADMIN_PORT="${PANDAWIKI_ADMIN_PORT:-5173}"
