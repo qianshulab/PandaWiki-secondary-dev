@@ -1,0 +1,402 @@
+version: "3.8"
+
+services:
+  pandawiki-postgres:
+    image: postgres:16-alpine
+    container_name: pandawiki-prod-postgres
+    environment:
+      POSTGRES_DB: panda-wiki
+      POSTGRES_USER: panda-wiki
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-panda-wiki-secret}
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U panda-wiki -d panda-wiki"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - pandawiki-prod-postgres:/var/lib/postgresql/data
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.10
+        aliases:
+          - panda-wiki-postgres
+
+  pandawiki-redis:
+    image: redis:7-alpine
+    container_name: pandawiki-prod-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - pandawiki-prod-redis:/data
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.11
+        aliases:
+          - panda-wiki-redis
+
+  pandawiki-nats:
+    image: nats:2-alpine
+    container_name: pandawiki-prod-nats
+    command:
+      [
+        "-js",
+        "-m",
+        "8222",
+        "--store_dir",
+        "/data",
+        "--user",
+        "panda-wiki",
+        "--pass",
+        "${NATS_PASSWORD:-panda-wiki-secret}",
+      ]
+    restart: unless-stopped
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - pandawiki-prod-nats:/data
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.13
+        aliases:
+          - panda-wiki-nats
+
+  pandawiki-minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: pandawiki-prod-minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-s3panda-wiki}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-panda-wiki-minio-secret}
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - pandawiki-prod-minio:/data
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.12
+        aliases:
+          - panda-wiki-minio
+
+  pandawiki-qdrant:
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-qdrant:v1.14.1
+    container_name: pandawiki-prod-qdrant
+    restart: unless-stopped
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-panda-wiki-qdrant-secret}
+    volumes:
+      - pandawiki-prod-qdrant:/qdrant/storage
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.15
+        aliases:
+          - panda-wiki-qdrant
+
+  pandawiki-raglite:
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/raglite:v2.17.0
+    container_name: pandawiki-prod-raglite
+    restart: unless-stopped
+    depends_on:
+      pandawiki-postgres:
+        condition: service_healthy
+      pandawiki-minio:
+        condition: service_healthy
+      pandawiki-qdrant:
+        condition: service_started
+      pandawiki-nats:
+        condition: service_healthy
+    environment:
+      GIN_MODE: release
+      DATABASE_POSTGRESQL_HOST: panda-wiki-postgres
+      DATABASE_POSTGRESQL_USER: panda-wiki
+      DATABASE_POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD:-panda-wiki-secret}
+      DATABASE_QDRANT_HOST: panda-wiki-qdrant
+      DATABASE_QDRANT_API_KEY: ${QDRANT_API_KEY:-panda-wiki-qdrant-secret}
+      STORAGE_MINIO_ENDPOINT: panda-wiki-minio:9000
+      STORAGE_MINIO_ACCESS_KEY_ID: s3panda-wiki
+      STORAGE_MINIO_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-panda-wiki-minio-secret}
+      NATS_URL: nats://panda-wiki-nats:4222
+      NATS_USER: panda-wiki
+      NATS_PASSWORD: ${NATS_PASSWORD:-panda-wiki-secret}
+      EMBEDDER_RPM: "800"
+      LLM_RPM: "50"
+    volumes:
+      - pandawiki-prod-raglite:/data
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.18
+        aliases:
+          - panda-wiki-raglite
+
+  pandawiki-crawler:
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/anydoc:v0.9.11
+    container_name: pandawiki-prod-crawler
+    restart: unless-stopped
+    init: true
+    depends_on:
+      pandawiki-nats:
+        condition: service_healthy
+      pandawiki-minio:
+        condition: service_healthy
+    environment:
+      GLOG_GLOBAL_LEVEL: info
+      NAMESPACE: anydoc
+      MQ_NATS_URL: nats://panda-wiki-nats:4222
+      MQ_NATS_USER: panda-wiki
+      MQ_NATS_PASSWORD: ${NATS_PASSWORD:-panda-wiki-secret}
+      OSS_MINIO_ACCESS_KEY: s3panda-wiki
+      OSS_MINIO_SECRET_KEY: ${S3_SECRET_KEY:-panda-wiki-minio-secret}
+      OSS_MINIO_ENDPOINT: panda-wiki-minio:9000
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.17
+        aliases:
+          - panda-wiki-crawler
+
+  pandawiki-caddy:
+    image: caddy:2.9-alpine
+    container_name: pandawiki-prod-caddy
+    restart: unless-stopped
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-run:/app/run
+      - caddy-data:/data
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.14
+        aliases:
+          - panda-wiki-caddy
+
+  pandawiki-admin:
+    build:
+      context: ../../web/admin
+      dockerfile: Dockerfile
+    container_name: pandawiki-prod-admin
+    restart: unless-stopped
+    ports:
+      - "2443:8080"
+    depends_on:
+      pandawiki-api:
+        condition: service_healthy
+    extra_hosts:
+      - "pandawiki-postgres:172.30.0.10"
+      - "pandawiki-redis:172.30.0.11"
+      - "pandawiki-nats:172.30.0.13"
+      - "pandawiki-minio:172.30.0.12"
+      - "pandawiki-caddy:172.30.0.14"
+      - "pandawiki-api:172.30.0.2"
+      - "pandawiki-app:172.30.0.112"
+      - "panda-wiki-postgres:172.30.0.10"
+      - "panda-wiki-redis:172.30.0.11"
+      - "panda-wiki-nats:172.30.0.13"
+      - "panda-wiki-minio:172.30.0.12"
+      - "panda-wiki-caddy:172.30.0.14"
+      - "panda-wiki-api:172.30.0.2"
+      - "panda-wiki-app:172.30.0.112"
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.21
+        aliases:
+          - panda-wiki-admin
+
+  pandawiki-app:
+    build:
+      context: ../../web
+      dockerfile: app/Dockerfile
+    container_name: pandawiki-prod-app
+    restart: unless-stopped
+    ports:
+      - "3010:3010"
+    environment:
+      PG_DSN: "host=172.30.0.10 user=panda-wiki password=${POSTGRES_PASSWORD:-panda-wiki-secret} dbname=panda-wiki port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+      REDIS_ADDR: 172.30.0.11:6379
+      MQ_NATS_SERVER: nats://172.30.0.13:4222
+      S3_ENDPOINT: 172.30.0.12:9000
+    extra_hosts:
+      - "pandawiki-postgres:172.30.0.10"
+      - "pandawiki-redis:172.30.0.11"
+      - "pandawiki-nats:172.30.0.13"
+      - "pandawiki-minio:172.30.0.12"
+      - "pandawiki-caddy:172.30.0.14"
+      - "pandawiki-api:172.30.0.2"
+      - "pandawiki-admin:172.30.0.21"
+      - "panda-wiki-postgres:172.30.0.10"
+      - "panda-wiki-redis:172.30.0.11"
+      - "panda-wiki-nats:172.30.0.13"
+      - "panda-wiki-minio:172.30.0.12"
+      - "panda-wiki-caddy:172.30.0.14"
+      - "panda-wiki-api:172.30.0.2"
+      - "panda-wiki-admin:172.30.0.21"
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.112
+        aliases:
+          - panda-wiki-app
+
+  pandawiki-api:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.api
+      args:
+        VERSION: "production"
+    container_name: pandawiki-prod-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      pandawiki-postgres:
+        condition: service_healthy
+      pandawiki-redis:
+        condition: service_healthy
+      pandawiki-nats:
+        condition: service_healthy
+      pandawiki-minio:
+        condition: service_healthy
+      pandawiki-raglite:
+        condition: service_started
+      pandawiki-crawler:
+        condition: service_started
+    volumes:
+      - caddy-run:/app/run
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-panda-wiki-secret}
+      NATS_PASSWORD: ${NATS_PASSWORD:-panda-wiki-secret}
+      PG_DSN: "host=172.30.0.10 user=panda-wiki password=${POSTGRES_PASSWORD:-panda-wiki-secret} dbname=panda-wiki port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+      REDIS_ADDR: 172.30.0.11:6379
+      MQ_NATS_SERVER: nats://172.30.0.13:4222
+      S3_ENDPOINT: 172.30.0.12:9000
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-panda-wiki-minio-secret}
+      RAG_CT_RAG_BASE_URL: http://172.30.0.18:5050
+      JWT_SECRET: ${JWT_SECRET:-panda-wiki-jwt-secret-change-me}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-PandaWiki_Production_Password_Replace_Me}
+      CADDY_API: /app/run/caddy-admin.sock
+      SUBNET_PREFIX: 172.30.0
+      SENTRY_ENABLED: "false"
+    extra_hosts:
+      - "pandawiki-postgres:172.30.0.10"
+      - "pandawiki-redis:172.30.0.11"
+      - "pandawiki-nats:172.30.0.13"
+      - "pandawiki-minio:172.30.0.12"
+      - "pandawiki-caddy:172.30.0.14"
+      - "pandawiki-qdrant:172.30.0.15"
+      - "pandawiki-crawler:172.30.0.17"
+      - "pandawiki-raglite:172.30.0.18"
+      - "pandawiki-admin:172.30.0.21"
+      - "pandawiki-app:172.30.0.112"
+      - "panda-wiki-postgres:172.30.0.10"
+      - "panda-wiki-redis:172.30.0.11"
+      - "panda-wiki-nats:172.30.0.13"
+      - "panda-wiki-minio:172.30.0.12"
+      - "panda-wiki-caddy:172.30.0.14"
+      - "panda-wiki-qdrant:172.30.0.15"
+      - "panda-wiki-crawler:172.30.0.17"
+      - "panda-wiki-raglite:172.30.0.18"
+      - "panda-wiki-admin:172.30.0.21"
+      - "panda-wiki-app:172.30.0.112"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8000/healthz"]
+      interval: 8s
+      timeout: 4s
+      retries: 15
+      start_period: 60s
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.2
+        aliases:
+          - panda-wiki-api
+
+  pandawiki-consumer:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.consumer
+      args:
+        VERSION: "production"
+    container_name: pandawiki-prod-consumer
+    restart: unless-stopped
+    depends_on:
+      pandawiki-api:
+        condition: service_healthy
+      pandawiki-raglite:
+        condition: service_started
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-panda-wiki-secret}
+      NATS_PASSWORD: ${NATS_PASSWORD:-panda-wiki-secret}
+      PG_DSN: "host=172.30.0.10 user=panda-wiki password=${POSTGRES_PASSWORD:-panda-wiki-secret} dbname=panda-wiki port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+      REDIS_ADDR: 172.30.0.11:6379
+      MQ_NATS_SERVER: nats://172.30.0.13:4222
+      S3_ENDPOINT: 172.30.0.12:9000
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-panda-wiki-minio-secret}
+      RAG_CT_RAG_BASE_URL: http://172.30.0.18:5050
+      JWT_SECRET: ${JWT_SECRET:-panda-wiki-jwt-secret-change-me}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-PandaWiki_Production_Password_Replace_Me}
+      SUBNET_PREFIX: 172.30.0
+      SENTRY_ENABLED: "false"
+    extra_hosts:
+      - "pandawiki-postgres:172.30.0.10"
+      - "pandawiki-redis:172.30.0.11"
+      - "pandawiki-nats:172.30.0.13"
+      - "pandawiki-minio:172.30.0.12"
+      - "pandawiki-qdrant:172.30.0.15"
+      - "pandawiki-crawler:172.30.0.17"
+      - "pandawiki-raglite:172.30.0.18"
+      - "pandawiki-api:172.30.0.2"
+      - "pandawiki-admin:172.30.0.21"
+      - "pandawiki-app:172.30.0.112"
+      - "panda-wiki-postgres:172.30.0.10"
+      - "panda-wiki-redis:172.30.0.11"
+      - "panda-wiki-nats:172.30.0.13"
+      - "panda-wiki-minio:172.30.0.12"
+      - "panda-wiki-qdrant:172.30.0.15"
+      - "panda-wiki-crawler:172.30.0.17"
+      - "panda-wiki-raglite:172.30.0.18"
+      - "panda-wiki-api:172.30.0.2"
+      - "panda-wiki-admin:172.30.0.21"
+      - "panda-wiki-app:172.30.0.112"
+    networks:
+      pandawiki-prod:
+        ipv4_address: 172.30.0.3
+        aliases:
+          - panda-wiki-consumer
+
+volumes:
+  pandawiki-prod-postgres:
+  pandawiki-prod-redis:
+  pandawiki-prod-nats:
+  pandawiki-prod-minio:
+  pandawiki-prod-qdrant:
+  pandawiki-prod-raglite:
+  caddy-data:
+  caddy-run:
+
+networks:
+  pandawiki-prod:
+    name: pandawiki-prod
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
