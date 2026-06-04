@@ -1,17 +1,18 @@
 # PandaWiki 二开版配置与使用手册
 
-更新时间：2026-06-04 14:30 Asia/Shanghai
+更新时间：2026-06-04 15:28 Asia/Shanghai
 
 本文档用于说明当前二开版本的本地预览、生产配置要点、核心功能使用方式、MCP/OpenAI API 调用方式和回滚方法。
 
 ## 1. 当前版本状态
 
-- 当前提交：`3fdb6880 feat: add mcp server and restore workflow`
+- 当前分支：`secondary-dev-analysis`（具体提交以 `git log -1 --oneline` 为准）
 - 已验收回滚点：`checkpoint/secondary-dev-phase3-e2e-pass-20260604-1410`
 - API 验收：`16 PASS / 0 FAIL`
 - UI 录制验收：`15 PASS / 0 FAIL`
 - 后端测试：`go test ./... -run '^$'` 通过
 - 前端构建：`web/admin`、`web/app` 均通过
+- 本地预览补充：fake Caddy 已从“只模拟 Admin Socket”调整为“Admin Socket + 轻量反向代理”，用于模拟生产 Caddy 的 host/port -> `X-KB-ID` 链路，不改动开源版基础业务代码。
 
 ## 2. 本地预览启动
 
@@ -39,8 +40,9 @@ wsl -d Ubuntu-22.04 -- bash -lc "cd '/mnt/d/AI WorkSpace/PandaWiki' && ./scripts
 | 项目 | 地址/账号 |
 | --- | --- |
 | Admin 登录页 | `http://127.0.0.1:5173/login` |
-| Wiki 站点预览 | `http://127.0.0.1:3010/node` |
-| Wiki 首页预览 | `http://127.0.0.1:3010/home` |
+| Wiki 直连预览（默认演示 KB） | `http://127.0.0.1:3010/node` |
+| Wiki 首页直连预览 | `http://127.0.0.1:3010/home` |
+| Wiki Caddy 链路预览 | 知识库配置的 host/port，例如 `http://127.0.0.1:18081` |
 | 后端 API（WSL 内/代理使用） | `http://127.0.0.1:8000` |
 | 后端 API（Windows 浏览器/客户端） | `http://localhost:8000` 或 `http://[::1]:8000` |
 | MCP Endpoint（Windows 浏览器/客户端） | `http://localhost:8000/mcp` 或 `http://[::1]:8000/mcp` |
@@ -49,7 +51,7 @@ wsl -d Ubuntu-22.04 -- bash -lc "cd '/mnt/d/AI WorkSpace/PandaWiki' && ./scripts
 
 启动成功后也可以查看：
 
-注意：WSL 有时只将后端 `8000` 端口映射到 Windows IPv6 localhost；如果 `http://127.0.0.1:8000` 访问失败，请使用 `http://localhost:8000` 或 `http://[::1]:8000`。Admin 页面仍使用 `http://127.0.0.1:5173/login`，Wiki 站点预览使用 `http://127.0.0.1:3010/node`。
+注意：WSL 有时只将后端 `8000` 端口映射到 Windows IPv6 localhost；如果 `http://127.0.0.1:8000` 访问失败，请使用 `http://localhost:8000` 或 `http://[::1]:8000`。Admin 页面仍使用 `http://127.0.0.1:5173/login`。Wiki 直连预览使用 `http://127.0.0.1:3010/node`；新建/修改知识库配置的独立 host/port 需要通过 fake Caddy/生产 Caddy 链路访问。
 
 ```text
 .e2e-runtime/preview.env
@@ -126,10 +128,10 @@ FEATURE_POLICY_ALLOW_VISITOR_PERMISSION_CONTROL=true
 
 ### 4.1 发布后访问 Wiki 站点
 
-文档发布后，Wiki 站点由前台 `web/app` 提供访问。
+文档发布后，Wiki 站点由前台 `web/app` 提供访问。生产链路为 Caddy/反向代理按知识库 host/port 注入 `X-KB-ID` 后转发到 `web/app`；本地预览使用 fake Caddy 模拟这条链路。
 
-- 本地预览：`http://127.0.0.1:3010/node`
-- 首页预览：`http://127.0.0.1:3010/home`
+- 本地直连预览：`http://127.0.0.1:3010/node`，用于默认演示知识库。
+- 本地 Caddy 链路预览：访问知识库配置的 host/port，例如 `http://127.0.0.1:18081`；该方式最接近生产访问。
 - 生产环境：访问知识库配置的正式域名/端口；如果配置了 `base_url`，以该地址为准。
 
 在 Admin 中发布文档后，打开上面的 Wiki 地址即可看到已发布内容。访问 `/node` 会自动跳转到当前知识库的首篇可访问文档；单篇文档地址格式为：
@@ -138,7 +140,9 @@ FEATURE_POLICY_ALLOW_VISITOR_PERMISSION_CONTROL=true
 http://<wiki-domain>/node/<node_id>
 ```
 
-Admin 顶部“访问 Wiki 网站”按钮读取知识库 `access_settings.base_url`。本地预览脚本会自动把该值设置为 `http://127.0.0.1:3010`，所以从后台点击访问 Wiki 时应跳转到 3010 端口；生产环境请在知识库访问配置中设置正式域名或 `base_url`。
+Admin 顶部“访问 Wiki 网站”按钮读取知识库 `access_settings.base_url`。本地预览脚本会自动把演示知识库的该值设置为 `http://127.0.0.1:3010`，所以演示知识库从后台点击访问 Wiki 时会跳转到 3010 直连预览。若手工创建/修改知识库并配置了独立 host/port，则应把 `base_url` 设置为该 host/port，fake Caddy 会监听对应端口并注入正确 `X-KB-ID`，从而避免所有知识库都落到 `DEV_KB_ID` 的直连预览。
+
+如果后台修改设置后前台未体现，先确认访问的是该知识库自己的 Caddy/base_url 地址，而不是固定的 3010 直连默认预览；固定 3010 在本地开发中只适合默认演示知识库。
 
 ## 5. MCP Server 使用
 

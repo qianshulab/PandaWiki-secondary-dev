@@ -47,7 +47,7 @@ npm install -g pnpm@10.12.1
 | `scripts/e2e/run_e2e_wsl.sh` | 一键启动依赖、迁移数据库、启动后端 API、执行 E2E 验收 |
 | `scripts/e2e/e2e_acceptance.py` | 第一阶段 API 验收用例 |
 | `scripts/e2e/fake_rag.py` | 本地 fake RAGLite 服务，避免依赖真实 RAG 服务 |
-| `scripts/e2e/fake_caddy.py` | 本地 fake Caddy Admin Socket |
+| `scripts/e2e/fake_caddy.py` | 本地 fake Caddy Admin Socket + 轻量反向代理，按知识库配置端口注入 `X-KB-ID` |
 | `scripts/e2e/build_frontend_wsl.sh` | Linux/WSL 下隔离构建 `web/app`，也可通过环境变量构建 admin/all |
 | `scripts/e2e/admin_static_proxy.py` | Admin 静态资源服务 + API 反向代理，用于录制验收 |
 | `scripts/e2e/ui_record_e2e.js` | Playwright UI 录制验收用例，输出截图、trace、视频 |
@@ -98,7 +98,7 @@ wsl -d Ubuntu-22.04 -u root -- /bin/bash "/mnt/d/AI WorkSpace/PandaWiki/scripts/
 wsl -d Ubuntu-22.04 -- bash -lc "cd '/mnt/d/AI WorkSpace/PandaWiki' && ./scripts/e2e/start_local_preview_wsl.sh"
 ```
 
-访问地址：Admin `http://127.0.0.1:5173/login`，Wiki `http://127.0.0.1:3010/node`，账号 `admin`，密码 `PandaWiki_E2E_123456`。预览脚本会将知识库 `base_url` 设置为 `http://127.0.0.1:3010`，因此后台“访问 Wiki 网站”按钮也会跳转到 3010。Windows 侧访问 MCP/API 建议使用 `http://localhost:8000/mcp`。
+访问地址：Admin `http://127.0.0.1:5173/login`，Wiki 直连预览 `http://127.0.0.1:3010/node`，账号 `admin`，密码 `PandaWiki_E2E_123456`。预览脚本会将演示知识库 `base_url` 设置为 `http://127.0.0.1:3010`，因此后台“访问 Wiki 网站”按钮可直接跳转。新建 Wiki 站点如果填写了独立 host/port，则由本地 fake Caddy 轻量代理监听对应端口并注入 `X-KB-ID`，用于模拟生产 Caddy 链路。Windows 侧访问 MCP/API 建议使用 `http://localhost:8000/mcp`。
 
 如需要重新安装 Playwright Linux 系统依赖：
 
@@ -113,7 +113,8 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_UI_INSTALL_PLAYWRIGHT_DEPS=1 /bin/b
 | Backend API（WSL 内） | `http://127.0.0.1:8000` |
 | Backend API（Windows 侧） | `http://localhost:8000` 或 `http://[::1]:8000` |
 | Admin UI 验收代理 | `http://127.0.0.1:5173` |
-| Wiki 站点预览 | `http://127.0.0.1:3010/node` |
+| Wiki 站点直连预览 | `http://127.0.0.1:3010/node` |
+| Wiki 站点 Caddy 链路预览 | 知识库配置的 host/port，例如 `http://127.0.0.1:18081` |
 | Postgres | `127.0.0.1:5432` |
 | Redis | `127.0.0.1:6379` |
 | NATS | `127.0.0.1:4222` |
@@ -121,6 +122,7 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_UI_INSTALL_PLAYWRIGHT_DEPS=1 /bin/b
 | MinIO Console | `127.0.0.1:9001` |
 | fake RAG | `http://127.0.0.1:5050` |
 | fake Caddy Admin | `/tmp/pandawiki-caddy-admin-<uid>.sock` |
+| fake Caddy 代理 | 根据知识库 `ports/hosts` 动态监听，例如 `127.0.0.1:18081` |
 
 ## 6. 二开功能开关与回滚点
 
@@ -294,5 +296,6 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_E2E_DROP_VOLUMES=1 /bin/bash "/mnt/
 - 问答机器人 API、内容复制保护前端残留商业版遮罩：已切换为对应功能开关。
 - Node 权限编辑在部分字段缺省时可能误触发空指针：已增加安全处理。
 - E2E fake Caddy Socket 使用固定 `/tmp` 路径时跨用户残留会导致清理失败：已改为按 UID 隔离的 `/tmp/pandawiki-caddy-admin-<uid>.sock`，并容错清理。
+- E2E fake Caddy 早期只模拟 Admin Socket，不真实监听新建知识库端口，手工点击新建站点访问链接会误判为产品基础功能异常；现已改为解析后端同步的 Caddy JSON 并启动轻量本地反向代理。
 - E2E 前端隔离构建目录使用固定 `/tmp/pandawiki-frontend-build` 时跨用户残留会导致清理失败：已改为按 UID 隔离的 `/tmp/pandawiki-frontend-build-<uid>`。
 - OpenAI API / MCP RAG 检索默认机器人认证按 source_type 全局匹配可能跨知识库串权：已优先按 `kb_id + source_type` 解析，保留旧数据兼容兜底。
