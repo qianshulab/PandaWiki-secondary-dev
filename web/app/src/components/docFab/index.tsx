@@ -14,11 +14,10 @@ import {
   Tooltip,
   Zoom,
 } from '@mui/material';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
 const DocFab = () => {
-  const pathname = usePathname();
   const { id: docId } = useParams() || {};
   const { kbDetail, mobile } = useStore();
   const [showActions, setShowActions] = useState(false);
@@ -89,7 +88,7 @@ const DocFab = () => {
                 </Fab>
               </Tooltip>
             </Zoom>
-            {pathname.startsWith(basePath + '/node/') && (
+            {!!docId && (
               <Zoom
                 in={showActions}
                 style={{ transitionDelay: showActions ? '40ms' : '0ms' }}
