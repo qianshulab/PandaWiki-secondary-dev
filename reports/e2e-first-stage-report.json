@@ -16,27 +16,27 @@
     {
       "name": "knowledge bases over free limit + admin permission split",
       "status": "PASS",
-      "elapsed_ms": 28
+      "elapsed_ms": 30
     },
     {
       "name": "nodes over 300 free limit",
       "status": "PASS",
-      "elapsed_ms": 1790
+      "elapsed_ms": 1897
     },
     {
       "name": "custom prompt get/put",
       "status": "PASS",
-      "elapsed_ms": 15
+      "elapsed_ms": 6
     },
     {
       "name": "block words get/post",
       "status": "PASS",
-      "elapsed_ms": 9
+      "elapsed_ms": 4
     },
     {
       "name": "api token CRUD",
       "status": "PASS",
-      "elapsed_ms": 22
+      "elapsed_ms": 15
     },
     {
       "name": "comment moderate endpoint",
@@ -51,17 +51,17 @@
     {
       "name": "paid app settings: watermark/copy/openai/mcp/contribution",
       "status": "PASS",
-      "elapsed_ms": 35
+      "elapsed_ms": 37
     },
     {
       "name": "document release history endpoints",
       "status": "PASS",
-      "elapsed_ms": 17
+      "elapsed_ms": 16
     },
     {
       "name": "document release restore workflow",
       "status": "PASS",
-      "elapsed_ms": 15
+      "elapsed_ms": 16
     },
     {
       "name": "OpenAI API compatibility guards",
@@ -81,7 +81,7 @@
     {
       "name": "contribution submit/list/detail/audit workflow",
       "status": "PASS",
-      "elapsed_ms": 390
+      "elapsed_ms": 355
     }
   ]
 }

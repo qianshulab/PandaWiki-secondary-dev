@@ -52,6 +52,7 @@ npm install -g pnpm@10.12.1
 | `scripts/e2e/admin_static_proxy.py` | Admin 静态资源服务 + API 反向代理，用于录制验收 |
 | `scripts/e2e/ui_record_e2e.js` | Playwright UI 录制验收用例，输出截图、trace、视频 |
 | `scripts/e2e/run_ui_record_e2e_wsl.sh` | 一键运行 API E2E、Admin 构建、UI 录制验收 |
+| `scripts/e2e/start_local_preview_wsl.sh` | 启动可人工访问的本地预览环境，不跑 UI 录制 |
 | `scripts/e2e/stop_e2e_wsl.sh` | 停止本地 E2E 服务 |
 | `reports/e2e-first-stage-report.json` | 最近一次 E2E 验收报告 |
 | `reports/ui-e2e-report.json` | 最近一次 UI 录制验收报告 |
@@ -89,6 +90,16 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_E2E_RESET=0 /bin/bash "/mnt/d/AI Wo
 wsl -d Ubuntu-22.04 -u root -- /bin/bash "/mnt/d/AI WorkSpace/PandaWiki/scripts/e2e/run_ui_record_e2e_wsl.sh"
 ```
 
+### 4.1 启动人工预览环境
+
+如果只想启动服务让浏览器人工访问，不需要重新跑 UI 录制，可以执行：
+
+```powershell
+wsl -d Ubuntu-22.04 -- bash -lc "cd '/mnt/d/AI WorkSpace/PandaWiki' && ./scripts/e2e/start_local_preview_wsl.sh"
+```
+
+访问地址：`http://127.0.0.1:5173/login`，账号 `admin`，密码 `PandaWiki_E2E_123456`。Windows 侧访问 MCP/API 建议使用 `http://localhost:8000/mcp`。
+
 如需要重新安装 Playwright Linux 系统依赖：
 
 ```powershell
@@ -99,7 +110,8 @@ wsl -d Ubuntu-22.04 -u root -- env PANDAWIKI_UI_INSTALL_PLAYWRIGHT_DEPS=1 /bin/b
 
 | 服务 | 地址/端口 |
 | --- | --- |
-| Backend API | `http://127.0.0.1:8000` |
+| Backend API（WSL 内） | `http://127.0.0.1:8000` |
+| Backend API（Windows 侧） | `http://localhost:8000` 或 `http://[::1]:8000` |
 | Admin UI 验收代理 | `http://127.0.0.1:5173` |
 | Postgres | `127.0.0.1:5432` |
 | Redis | `127.0.0.1:6379` |
