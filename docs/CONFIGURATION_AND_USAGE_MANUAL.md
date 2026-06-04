@@ -39,6 +39,8 @@ wsl -d Ubuntu-22.04 -- bash -lc "cd '/mnt/d/AI WorkSpace/PandaWiki' && ./scripts
 | 项目 | 地址/账号 |
 | --- | --- |
 | Admin 登录页 | `http://127.0.0.1:5173/login` |
+| Wiki 站点预览 | `http://127.0.0.1:3010/node` |
+| Wiki 首页预览 | `http://127.0.0.1:3010/home` |
 | 后端 API（WSL 内/代理使用） | `http://127.0.0.1:8000` |
 | 后端 API（Windows 浏览器/客户端） | `http://localhost:8000` 或 `http://[::1]:8000` |
 | MCP Endpoint（Windows 浏览器/客户端） | `http://localhost:8000/mcp` 或 `http://[::1]:8000/mcp` |
@@ -47,7 +49,7 @@ wsl -d Ubuntu-22.04 -- bash -lc "cd '/mnt/d/AI WorkSpace/PandaWiki' && ./scripts
 
 启动成功后也可以查看：
 
-注意：WSL 有时只将后端 `8000` 端口映射到 Windows IPv6 localhost；如果 `http://127.0.0.1:8000` 访问失败，请使用 `http://localhost:8000` 或 `http://[::1]:8000`。Admin 页面仍使用 `http://127.0.0.1:5173/login`。
+注意：WSL 有时只将后端 `8000` 端口映射到 Windows IPv6 localhost；如果 `http://127.0.0.1:8000` 访问失败，请使用 `http://localhost:8000` 或 `http://[::1]:8000`。Admin 页面仍使用 `http://127.0.0.1:5173/login`，Wiki 站点预览使用 `http://127.0.0.1:3010/node`。
 
 ```text
 .e2e-runtime/preview.env
@@ -121,6 +123,20 @@ FEATURE_POLICY_ALLOW_VISITOR_PERMISSION_CONTROL=true
 | 贡献投稿/审核 | 前台贡献入口 + Admin 贡献审核列表 |
 | OpenAI API Bot | Admin 机器人/API 设置 |
 | MCP Server | Admin MCP Server 设置 + `/mcp` 接口 |
+
+### 4.1 发布后访问 Wiki 站点
+
+文档发布后，Wiki 站点由前台 `web/app` 提供访问。
+
+- 本地预览：`http://127.0.0.1:3010/node`
+- 首页预览：`http://127.0.0.1:3010/home`
+- 生产环境：访问知识库配置的正式域名/端口；如果配置了 `base_url`，以该地址为准。
+
+在 Admin 中发布文档后，打开上面的 Wiki 地址即可看到已发布内容。访问 `/node` 会自动跳转到当前知识库的首篇可访问文档；单篇文档地址格式为：
+
+```text
+http://<wiki-domain>/node/<node_id>
+```
 
 ## 5. MCP Server 使用
 

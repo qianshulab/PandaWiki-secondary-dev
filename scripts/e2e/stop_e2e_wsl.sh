@@ -5,6 +5,7 @@ ROOT="${PANDAWIKI_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 COMPOSE_FILE="$ROOT/deploy/e2e/docker-compose.yml"
 RUNTIME_DIR="$ROOT/.e2e-runtime"
 CADDY_SOCKET="${PANDAWIKI_E2E_CADDY_SOCKET:-/tmp/pandawiki-caddy-admin-${UID:-$(id -u)}.sock}"
+BUILD_PARENT="${PANDAWIKI_FRONTEND_BUILD_PARENT:-/tmp/pandawiki-frontend-build-${UID:-$(id -u)}}"
 
 compose() {
   if command -v docker-compose >/dev/null 2>&1; then
@@ -42,7 +43,7 @@ kill_api_port_if_owned_by_repo() {
 }
 
 echo "[e2e] stop local helper/api processes"
-for name in api fake_rag fake_caddy admin_proxy; do
+for name in api fake_rag fake_caddy admin_proxy wiki_app; do
   pid_file="$RUNTIME_DIR/${name}.pid"
   if [ -f "$pid_file" ]; then
     kill "$(cat "$pid_file")" 2>/dev/null || true
@@ -52,6 +53,7 @@ done
 kill_by_cwd_and_pattern 'go run ../../cmd/api' "$ROOT/backend/store/pg"
 kill_by_cwd_and_pattern '/tmp/go-build.*/exe/api' "$ROOT/backend/store/pg"
 kill_by_cwd_and_pattern 'scripts/e2e/admin_static_proxy.py' "$ROOT"
+kill_by_cwd_and_pattern 'next dev.*3010' "$BUILD_PARENT/web/app"
 kill_api_port_if_owned_by_repo
 rm -f "$CADDY_SOCKET" 2>/dev/null || true
 
