@@ -183,7 +183,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8011:8011"
+      # Local Windows/WSL production-like validation cannot use Linux host
+      # networking transparently from Windows localhost, so publish a Wiki
+      # port range for dynamically-created KB sites.
+      - "8010-8099:8010-8099"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-run:/app/run

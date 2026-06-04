@@ -27,7 +27,7 @@ docker compose -f deploy/production/docker-compose.yml up -d --build
 | API | `http://127.0.0.1:8000` | 后端接口与 MCP |
 | MCP | `http://127.0.0.1:8000/mcp` | 与文档一致 |
 | Caddy（Wiki 站点） | `http://127.0.0.1:80` | 由 KB 的 `access_settings.port`/`base_url` 决定路由 |
-| Caddy（自定义 Wiki 端口） | `http://127.0.0.1:8011` | 本地验收已发布；其他自定义端口需同步增加 compose 端口映射 |
+| Caddy（自定义 Wiki 端口） | `http://127.0.0.1:8010-8099` | Windows/WSL 本地验收端口范围；创建 Wiki 时建议选择此范围内端口 |
 | MinIO API | `http://127.0.0.1:9000` | 文件存储 |
 | MinIO Console | `http://127.0.0.1:9001` | 可选管理 |
 | PostgreSQL | `127.0.0.1:5432` | 数据库 |
@@ -113,9 +113,9 @@ dial tcp 172.30.0.18:5050: connect: no route to host
 1. 在后台创建知识库（`访问设置 -> 主机地址/端口`）；
 2. 建议首次先设置：
    - `domain`：`localhost`
-   - `端口`：`80`
+   - `端口`：`8010-8099` 范围内，例如 `8011`
 3. 保存并发布任意文档后，使用 `访问 Wiki 网站` 入口或直接访问：
-   - `http://127.0.0.1`
+   - `http://127.0.0.1:8011`
    - `/node/<doc_id>` / `/home`
 
 ### 5.6 MCP 验证
