@@ -476,7 +476,44 @@ nginx:alpine
 
 如果 NAS 访问 Docker Hub 慢，可能需要使用可信镜像源或内部镜像仓库。生产环境不建议长期依赖未知公共加速器。
 
-### 12.2 端口被占用
+### 12.2 `go mod download` 超时
+
+如果构建 API 镜像时报类似错误：
+
+```text
+RUN go mod download
+Get "https://proxy.golang.org/...": i/o timeout
+```
+
+这是 NAS 到 Go 官方模块代理 `proxy.golang.org` 网络不稳定导致的源码构建依赖下载失败，不是 PandaWiki 运行时报错。
+
+二开版已在源码构建阶段默认使用更适合国内网络的 Go 模块代理：
+
+```text
+GOPROXY=https://goproxy.cn,direct
+GOSUMDB=sum.golang.google.cn
+```
+
+如果你使用的是旧版本代码，请先更新后重试：
+
+```bash
+cd /volume1/docker/pandawiki
+git pull origin secondary-dev-analysis
+sudo bash manager.sh install
+```
+
+如果你的内网生产环境有自建 Go 模块代理，也可以在启动前写入 `.env` 覆盖：
+
+```bash
+cd /volume1/docker/pandawiki
+cat >> deploy/production/.env <<'EOF'
+GOPROXY=https://你的内部Go代理,direct
+GOSUMDB=sum.golang.google.cn
+EOF
+sudo bash manager.sh install
+```
+
+### 12.3 端口被占用
 
 修改：
 
@@ -502,7 +539,7 @@ ADMIN_PORT=2444
 sudo bash manager.sh install
 ```
 
-### 12.3 忘记后台密码
+### 12.4 忘记后台密码
 
 查看：
 
@@ -516,7 +553,7 @@ grep ADMIN_PASSWORD deploy/production/.env
 admin
 ```
 
-### 12.4 只想停服务，不删数据
+### 12.5 只想停服务，不删数据
 
 ```bash
 sudo bash manager.sh stop

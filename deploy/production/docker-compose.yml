@@ -49,6 +49,8 @@ services:
       dockerfile: Dockerfile.api
       args:
         VERSION: "secondary-dev"
+        GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+        GOSUMDB: ${GOSUMDB:-sum.golang.google.cn}
     volumes:
       - ./data/caddy/run:/app/run
       - ./data/nginx/ssl:/app/etc/nginx/ssl
@@ -76,6 +78,8 @@ services:
       dockerfile: Dockerfile.consumer
       args:
         VERSION: "secondary-dev"
+        GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+        GOSUMDB: ${GOSUMDB:-sum.golang.google.cn}
     environment:
       - NATS_PASSWORD=${NATS_PASSWORD}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
