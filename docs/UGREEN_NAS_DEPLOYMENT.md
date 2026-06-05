@@ -513,7 +513,47 @@ EOF
 sudo bash manager.sh install
 ```
 
-### 12.3 端口被占用
+### 12.3 创建/保存 Wiki 提示“端口或证书配置”
+
+如果换了高位端口，例如 `18028` 仍然提示：
+
+```text
+保存配置失败，请检查端口或证书配置
+```
+
+先确认已经拉取包含 Caddy Unix Socket 修复的新版本，并重建 API 镜像：
+
+```bash
+cd /volume1/docker/pandawiki
+git pull origin secondary-dev-analysis
+sudo bash manager.sh install
+```
+
+然后查看关键日志：
+
+```bash
+docker logs panda-wiki-api --tail=300 | grep -Ei "caddy|socket|listen|bind|certificate|failed|error"
+docker logs panda-wiki-caddy --tail=300
+```
+
+最稳配置建议：
+
+```text
+域名或 IP：NAS 内网 IP
+HTTP：启用
+HTTP 端口：18028 或其他未占用高位端口
+HTTPS：关闭
+证书文件：留空
+私钥文件：留空
+```
+
+如需覆盖 Caddy 容器内的 admin socket 路径，可在 `.env` 中设置：
+
+```text
+CADDY_ADMIN_LISTEN=/var/run/caddy/caddy-admin.sock
+```
+
+### 12.4 端口被占用
 
 修改：
 
@@ -539,7 +579,7 @@ ADMIN_PORT=2444
 sudo bash manager.sh install
 ```
 
-### 12.4 忘记后台密码
+### 12.5 忘记后台密码
 
 查看：
 
@@ -553,7 +593,7 @@ grep ADMIN_PASSWORD deploy/production/.env
 admin
 ```
 
-### 12.5 只想停服务，不删数据
+### 12.6 只想停服务，不删数据
 
 ```bash
 sudo bash manager.sh stop

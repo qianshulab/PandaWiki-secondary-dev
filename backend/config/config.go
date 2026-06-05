@@ -18,10 +18,11 @@ type Config struct {
 	Redis         RedisConfig         `mapstructure:"redis"`
 	Auth          AuthConfig          `mapstructure:"auth"`
 	S3            S3Config            `mapstructure:"s3"`
-	Sentry        SentryConfig        `mapstructure:"sentry"`
-	CaddyAPI      string              `mapstructure:"caddy_api"`
-	SubnetPrefix  string              `mapstructure:"subnet_prefix"`
-	FeaturePolicy FeaturePolicyConfig `mapstructure:"feature_policy"`
+	Sentry           SentryConfig        `mapstructure:"sentry"`
+	CaddyAPI         string              `mapstructure:"caddy_api"`
+	CaddyAdminListen string              `mapstructure:"caddy_admin_listen"`
+	SubnetPrefix     string              `mapstructure:"subnet_prefix"`
+	FeaturePolicy    FeaturePolicyConfig `mapstructure:"feature_policy"`
 }
 
 type LogConfig struct {
@@ -131,9 +132,10 @@ func NewConfig() (*Config, error) {
 			Enabled: true,
 			DSN:     "https://2a4cff1ae04b624ffc72663f523024ff@sentry.baizhi.cloud/4",
 		},
-		CaddyAPI:      "/app/run/caddy-admin.sock",
-		SubnetPrefix:  "169.254.15",
-		FeaturePolicy: DefaultFeaturePolicyConfig(),
+		CaddyAPI:         "/app/run/caddy-admin.sock",
+		CaddyAdminListen: "/var/run/caddy/caddy-admin.sock",
+		SubnetPrefix:     "169.254.15",
+		FeaturePolicy:    DefaultFeaturePolicyConfig(),
 	}
 
 	viper.AddConfigPath(".")
@@ -213,6 +215,9 @@ func overrideWithEnv(c *Config) {
 	// caddy api
 	if env := os.Getenv("CADDY_API"); env != "" {
 		c.CaddyAPI = env
+	}
+	if env := os.Getenv("CADDY_ADMIN_LISTEN"); env != "" {
+		c.CaddyAdminListen = env
 	}
 	// log level
 	if env := os.Getenv("LOG_LEVEL"); env != "" {
