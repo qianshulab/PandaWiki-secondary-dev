@@ -1,6 +1,6 @@
 # PandaWiki 生产级 Docker 部署（无 fake 依赖）
 
-更新时间：2026-06-04 23:55 Asia/Shanghai
+更新时间：2026-06-05 Asia/Shanghai
 
 本部署方案不再使用 `fake_caddy` / `fake_rag`，仅保留真实服务链路（PostgreSQL、Redis、NATS、MinIO、Qdrant、RAGLite、Anydoc Crawler、PandaWiki API、Consumer、Caddy、Admin、App）。
 
@@ -45,41 +45,57 @@ bash manager.sh update
 bash manager.sh uninstall
 ```
 
-首次执行 `install` 时，如果 `deploy/production/.env` 不存在，会自动调用交互式配置脚本，要求用户输入并二次确认生产密码。
+首次执行 `install` 时，如果 `deploy/production/.env` 不存在，会按原版安装器风格自动生成生产密码/密钥，并在安装完成后输出后台 `admin` 密码。
 
-### 2.1 推荐：交互式生成生产配置
+如需手动指定密码，可单独执行：
+
+```bash
+bash manager.sh config
+```
+
+### 2.1 可选：单独生成生产配置
 
 Windows / PowerShell：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Auto -NoStart
 ```
 
 Linux / macOS / WSL：
 
 ```bash
-bash scripts/setup_production.sh
+bash scripts/setup_production.sh --auto --no-start
 ```
 
-脚本会交互式要求输入并二次确认以下生产密码/密钥：
+默认原版风格会自动生成以下生产密码/密钥：
 
 - `ADMIN_PASSWORD`
 - `POSTGRES_PASSWORD`
 - `NATS_PASSWORD`
 - `S3_SECRET_KEY` / `MINIO_ROOT_PASSWORD`
 - `QDRANT_API_KEY`
-- `JWT_SECRET`（可直接回车自动生成）
+- `JWT_SECRET`
 
 脚本会生成 `deploy/production/.env`。如果该文件已存在，会先自动备份为 `.env.bak.<时间戳>`。
+
+如确实需要手动指定密码，可使用交互式模式：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -NoStart
+```
+
+```bash
+bash scripts/setup_production.sh --no-start
+```
 
 如需生成配置后直接构建并启动：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Start
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Auto -Start
 ```
 
 ```bash
-bash scripts/setup_production.sh --start
+bash scripts/setup_production.sh --auto --start
 ```
 
 ### 2.2 手动启动
@@ -110,9 +126,11 @@ docker compose -f deploy/production/docker-compose.yml up -d --build
 | RAGLite | 容器内网 `172.30.0.18:5050` | RAG store，API 通过 `RAG_CT_RAG_BASE_URL` 调用 |
 | Anydoc Crawler | 容器内网 `172.30.0.17:8080` | URL/Sitemap/RSS/第三方文档导入 |
 
-默认管理员密码：
+管理员密码：
 
-- 如未显式覆盖，默认：`PandaWiki_Production_Password_Replace_Me`
+- 通过 `bash manager.sh install` 或 `scripts/setup_production.* -Auto` 安装时会自动生成并输出；
+- 同时写入 `deploy/production/.env` 的 `ADMIN_PASSWORD`；
+- 不建议在生产环境直接依赖 compose 内置兜底默认值。
 
 可用环境变量覆盖（示例）：
 

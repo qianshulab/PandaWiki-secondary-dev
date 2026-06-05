@@ -21,16 +21,18 @@ PandaWiki 二开版部署管理脚本
   bash manager.sh logs [service]   # 查看日志，例如：bash manager.sh logs pandawiki-api
   bash manager.sh update           # 拉取当前分支最新代码并重建启动
   bash manager.sh config           # 交互式重新生成 deploy/production/.env
+  bash manager.sh config-auto      # 自动重新生成 deploy/production/.env
   bash manager.sh uninstall        # 停止并卸载，可选删除数据卷
   bash manager.sh help             # 显示帮助
 
 常用入口：
   后台：https://服务器IP:2443/login
   账号：admin
-  密码：安装时交互输入的 ADMIN_PASSWORD
+  密码：安装时自动生成并输出，也会写入 deploy/production/.env
 
 注意：
-  - 生产密码不会写死在脚本中，会交互式输入并写入 deploy/production/.env。
+  - 默认安装行为对齐原版：自动生成生产密码/密钥，并在安装完成后输出后台密码。
+  - 如需手动指定密码，可执行 bash manager.sh config 进入交互式配置。
   - 已有生产数据时不要随意重新生成 .env，否则可能导致数据库/对象存储/MQ 等服务无法读取旧数据。
 EOF
 }
@@ -93,8 +95,46 @@ ensure_env() {
   if [[ -f "$ENV_FILE" ]]; then
     return 0
   fi
-  warn "未发现生产配置 $ENV_FILE，将开始交互式生成。"
-  bash "$SETUP_SCRIPT" --no-start
+  warn "未发现生产配置 $ENV_FILE，将按原版风格自动生成生产密码/密钥。"
+  bash "$SETUP_SCRIPT" --auto --no-start
+}
+
+env_value() {
+  local key="$1"
+  [[ -f "$ENV_FILE" ]] || return 0
+  awk -F= -v k="$key" '$1 == k { sub(/^[^=]*=/, ""); print; exit }' "$ENV_FILE"
+}
+
+detect_host_ip() {
+  if command -v hostname >/dev/null 2>&1; then
+    local ips
+    ips="$(hostname -I 2>/dev/null || true)"
+    if [[ -n "$ips" ]]; then
+      for ip in $ips; do
+        if [[ "$ip" != 127.* && "$ip" != "::1" ]]; then
+          printf '%s' "$ip"
+          return 0
+        fi
+      done
+    fi
+  fi
+  printf '服务器IP'
+}
+
+print_success_info() {
+  local ip admin_password
+  ip="$(detect_host_ip)"
+  admin_password="$(env_value ADMIN_PASSWORD)"
+  cat <<EOF
+
+SUCCESS  控制台信息:
+SUCCESS    访问地址: https://$ip:2443/login
+SUCCESS    用户名: admin
+SUCCESS    密码: ${admin_password:-请查看 deploy/production/.env 中的 ADMIN_PASSWORD}
+
+Wiki 访问:
+  在后台创建/配置 Wiki 后，访问对应域名或端口，例如 http://$ip:8011/
+EOF
 }
 
 install() {
@@ -104,22 +144,7 @@ install() {
   log "开始构建并启动生产服务..."
   compose up -d --build
   status
-  cat <<EOF
-
-部署完成。
-
-后台入口：
-  https://服务器IP:2443/login
-
-后台账号：
-  admin
-
-后台密码：
-  你安装时交互输入的 ADMIN_PASSWORD
-
-Wiki 访问：
-  在后台创建/配置 Wiki 后，访问对应域名或端口，例如 http://服务器IP:8011/
-EOF
+  print_success_info
 }
 
 start() {
@@ -177,6 +202,19 @@ config() {
   bash "$SETUP_SCRIPT" --no-start
 }
 
+config_auto() {
+  require_project
+  if [[ -f "$ENV_FILE" ]]; then
+    warn "即将自动重新生成 .env。已有数据的生产环境不建议随意更换数据库/S3/NATS/Qdrant 密码。"
+    read -r -p "确认继续？输入 yes 继续：" answer
+    if [[ "$answer" != "yes" ]]; then
+      log "已取消。"
+      return 0
+    fi
+  fi
+  bash "$SETUP_SCRIPT" --auto --no-start
+}
+
 update() {
   require_project
   check_docker_access
@@ -222,9 +260,10 @@ menu() {
 3) 查看日志
 4) 重启服务
 5) 停止服务
-6) 重新生成生产配置 .env
+6) 交互式重新生成生产配置 .env
 7) 更新代码并重建
 8) 卸载
+9) 自动重新生成生产配置 .env
 0) 退出
 ====================================
 EOF
@@ -241,6 +280,7 @@ EOF
       6) config ;;
       7) update ;;
       8) uninstall ;;
+      9) config_auto ;;
       0) exit 0 ;;
       *) warn "无效选择。" ;;
     esac
@@ -258,6 +298,7 @@ main() {
     logs) shift || true; logs "${1:-}" ;;
     update) update ;;
     config|configure) config ;;
+    config-auto|configure-auto) config_auto ;;
     uninstall|remove) uninstall ;;
     help|-h|--help) usage ;;
     menu|"") menu ;;

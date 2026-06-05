@@ -1,25 +1,33 @@
 param(
   [switch]$Help,
   [switch]$Start,
-  [switch]$NoStart
+  [switch]$NoStart,
+  [switch]$Auto
 )
 
 $ErrorActionPreference = "Stop"
 
 function Show-Help {
   Write-Host @"
-PandaWiki 生产环境交互式初始化脚本
+PandaWiki 生产环境初始化脚本
 
 用法：
   powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1
   powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Start
   powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -NoStart
+  powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Auto -Start
+  powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Auto -NoStart
 
 功能：
-  1. 交互式设置生产密码/密钥
+  1. 交互式或自动生成生产密码/密钥
   2. 生成 deploy/production/.env
   3. 如 .env 已存在，自动备份
   4. 可选择执行 docker compose up -d --build
+
+参数：
+  -Auto     自动生成所有生产密码/密钥，行为更接近原版安装器
+  -Start    生成配置后立即构建并启动
+  -NoStart  仅生成配置，不启动
 
 注意：
   - .env 会保存明文密码，Docker Compose 需要读取；请妥善保护服务器文件权限。
@@ -48,7 +56,7 @@ function ConvertTo-PlainText([Security.SecureString]$secure) {
 }
 
 function New-SafeSecret([int]$Length = 40) {
-  $chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._~!@%+=:,/-"
+  $chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
   $bytes = New-Object byte[] ($Length)
   [Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
   $out = New-Object System.Text.StringBuilder
@@ -164,15 +172,26 @@ if (-not (Test-Path (Join-Path $deployDir "docker-compose.yml"))) {
 Write-Host "PandaWiki 生产环境初始化" -ForegroundColor Cyan
 Write-Host "项目目录：$repoRoot"
 Write-Host ""
-Write-Host "请设置以下生产密码。输入过程不会显示明文。" -ForegroundColor Cyan
-Write-Host ""
+if ($Auto) {
+  Write-Host "将自动生成生产密码/密钥。" -ForegroundColor Cyan
+  Write-Host ""
+  $adminPassword = New-SafeSecret 24
+  $postgresPassword = New-SafeSecret 32
+  $natsPassword = New-SafeSecret 32
+  $s3Password = New-SafeSecret 32
+  $qdrantApiKey = New-SafeSecret 32
+  $jwtSecret = New-SafeSecret 64
+} else {
+  Write-Host "请设置以下生产密码。输入过程不会显示明文。" -ForegroundColor Cyan
+  Write-Host ""
 
-$adminPassword = Read-RequiredSecret "后台 admin 密码 ADMIN_PASSWORD" 12
-$postgresPassword = Read-RequiredSecret "PostgreSQL 密码 POSTGRES_PASSWORD" 16
-$natsPassword = Read-RequiredSecret "NATS 密码 NATS_PASSWORD" 16
-$s3Password = Read-RequiredSecret "MinIO/S3 密码 S3_SECRET_KEY/MINIO_ROOT_PASSWORD" 16
-$qdrantApiKey = Read-RequiredSecret "Qdrant API Key QDRANT_API_KEY" 16
-$jwtSecret = Read-OptionalSecret "JWT_SECRET" 32 64
+  $adminPassword = Read-RequiredSecret "后台 admin 密码 ADMIN_PASSWORD" 12
+  $postgresPassword = Read-RequiredSecret "PostgreSQL 密码 POSTGRES_PASSWORD" 16
+  $natsPassword = Read-RequiredSecret "NATS 密码 NATS_PASSWORD" 16
+  $s3Password = Read-RequiredSecret "MinIO/S3 密码 S3_SECRET_KEY/MINIO_ROOT_PASSWORD" 16
+  $qdrantApiKey = Read-RequiredSecret "Qdrant API Key QDRANT_API_KEY" 16
+  $jwtSecret = Read-OptionalSecret "JWT_SECRET" 32 64
+}
 
 if (Test-Path $envPath) {
   $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -202,6 +221,8 @@ ADMIN_PASSWORD=$adminPassword
 Set-Content -LiteralPath $envPath -Value $envContent -Encoding UTF8
 Write-Host ""
 Write-Host "已生成生产配置：$envPath" -ForegroundColor Green
+Write-Host "后台账号：admin" -ForegroundColor Green
+Write-Host "后台密码：$adminPassword" -ForegroundColor Green
 
 try {
   $compose = Find-ComposeCommand
@@ -231,7 +252,7 @@ if ($shouldStart) {
   Write-Host ""
   Write-Host "后台入口：https://服务器IP:2443/login" -ForegroundColor Green
   Write-Host "后台账号：admin" -ForegroundColor Green
-  Write-Host "后台密码：你刚才交互输入的 ADMIN_PASSWORD" -ForegroundColor Green
+  Write-Host "后台密码：$adminPassword" -ForegroundColor Green
 } else {
   Write-Host ""
   Write-Host "已跳过启动。后续可执行：" -ForegroundColor Yellow
