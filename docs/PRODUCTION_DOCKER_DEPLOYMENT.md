@@ -170,3 +170,33 @@ https://服务器IP:2443
 - 不要随意删除 `deploy/production/data/`，这是生产数据目录；
 - 如果修改 `.env` 中间件密码，通常需要同时清理旧数据或保持原有数据密码一致；
 - 生产部署不再使用本地验收用 fake 服务。
+
+## 9. 公网域名接入 CDN / EdgeOne / 边缘加速
+
+PandaWiki 前台问答使用 `text/event-stream` 流式响应。公网域名如果接入腾讯云 EdgeOne、CDN、WAF 或其他边缘加速服务，需要把问答接口按“动态长连接”处理，否则可能出现：
+
+- 前台提问提示 `network error`；
+- 点击默认问题异常，但直接输入问题偶现正常；
+- 回答中出现 `nonce is required`；
+- 浏览器 Network 中 `/share/v1/chat/message` 或 `/share/v1/chat/widget` 请求被边缘节点提前断开。
+
+推荐在边缘加速控制台增加高优先级规则：
+
+| 路径 | 建议配置 |
+| --- | --- |
+| `/share/v1/chat/message` | 不缓存；允许 `POST`；允许 `text/event-stream` 流式响应；关闭页面优化、HTML 改写、响应体改写；回源响应超时设置为平台允许的较大值，建议不少于 300 秒 |
+| `/share/v1/chat/widget` | 同上 |
+| `/share/v1/chat/search` | 不缓存；允许 `POST` |
+| `/share/v1/captcha/*` | 不缓存；允许 `POST`；不要叠加 Bot/JS 二次挑战 |
+| `/share/v1/common/file/upload*` | 不缓存；允许上传请求体 |
+| `/share/v1/*` | 不确定具体规则时，先统一按动态接口不缓存处理 |
+
+同时检查：
+
+- 回源地址、回源协议和回源端口必须指向 PandaWiki 前台站点对应的入口，不要只指向后台控制台端口；
+- 不要对 `/share/v1/chat/*` 做缓存、压缩合并、页面优化、HTML 改写或响应体改写；
+- WAF / Bot 管理先放行 `/share/v1/chat/*`、`/share/v1/captcha/*`，确认问答正常后再按需收紧；
+- 保留 `Host`、`X-Forwarded-For`、`X-Real-IP` 等回源请求头；
+- 如果 NAS / 服务器内网 IP 访问问答正常，但公网域名异常，优先排查边缘加速规则、回源超时、WAF/Bot 挑战和缓存策略。
+
+`nonce is required` 的常见触发链路是：后端首次问答通过 SSE 返回 `conversation_id` 和 `nonce`，边缘层异常中断后前端只收到 `conversation_id`、没有收到 `nonce`，下一次续问携带了不完整会话身份，后端安全校验会拒绝该请求。二开版前台已经增加容错：只有 `conversation_id` 与 `nonce` 同时存在才续接会话；如果只存在 `conversation_id`，会自动清理会话身份并新开会话。但公网域名的 `network error` 仍需要在边缘加速层放通动态 SSE 请求。

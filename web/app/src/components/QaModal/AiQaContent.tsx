@@ -147,6 +147,8 @@ const AiQaContent: React.FC<{
   const [thinking, setThinking] = useState<keyof typeof AnswerStatus>(4);
   const [nonce, setNonce] = useState('');
   const [conversationId, setConversationId] = useState('');
+  const nonceRef = useRef('');
+  const conversationIdRef = useRef('');
   const [input, setInput] = useState('');
   const [open, setOpen] = useState(false);
   const [conversationItem, setConversationItem] =
@@ -171,12 +173,23 @@ const AiQaContent: React.FC<{
     behavior: 'smooth',
   });
 
+  const resetConversationIdentity = () => {
+    nonceRef.current = '';
+    conversationIdRef.current = '';
+    setNonce('');
+    setConversationId('');
+
+    if (typeof window === 'undefined') return;
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.delete('cid');
+    window.history.replaceState(null, '', currentUrl.toString());
+  };
+
   const onReset = () => {
     if (loading) {
       handleSearchAbort();
     }
-    handleSearch(true);
-    setConversationId('');
+    resetConversationIdentity();
     setConversation([]);
     setFullAnswer('');
     setInput('');
@@ -188,7 +201,6 @@ const AiQaContent: React.FC<{
     });
     setUploadedImages([]);
     setLoading(false);
-    setNonce('');
   };
 
   const handleSearch = (reset: boolean = false) => {
@@ -443,22 +455,34 @@ const AiQaContent: React.FC<{
       app_type: 1,
       captcha_token: token,
     };
-    if (conversationId) reqData.conversation_id = conversationId;
-    if (nonce) reqData.nonce = nonce;
+    const currentConversationId = conversationIdRef.current || conversationId;
+    const currentNonce = nonceRef.current || nonce;
+    if (currentConversationId && currentNonce) {
+      reqData.conversation_id = currentConversationId;
+      reqData.nonce = currentNonce;
+    } else if (currentConversationId && !currentNonce) {
+      resetConversationIdentity();
+    }
 
     if (sseClientRef.current) {
       sseClientRef.current.subscribe(
         JSON.stringify(reqData),
         ({ type, content, chunk_result }) => {
           if (type === 'conversation_id') {
-            setConversationId(prev => prev + content);
+            conversationIdRef.current += content;
+            setConversationId(conversationIdRef.current);
           } else if (type === 'message_id') {
             messageIdRef.current += content;
           } else if (type === 'nonce') {
-            setNonce(prev => prev + content);
+            nonceRef.current += content;
+            setNonce(nonceRef.current);
           } else if (type === 'error') {
             setLoading(false);
             setThinking(4);
+            const lowerContent = (content || '').toLowerCase();
+            if (!nonceRef.current || lowerContent.includes('nonce')) {
+              resetConversationIdentity();
+            }
             setConversation(prev => {
               const newConversation = [...prev];
               const lastConversation =
@@ -549,6 +573,9 @@ const AiQaContent: React.FC<{
 
   const onSearch = (q: string, reset: boolean = false) => {
     if (loading || (!q.trim() && uploadedImages.length === 0)) return;
+    if (reset) {
+      resetConversationIdentity();
+    }
     setShouldAutoScroll(true); // 开始新搜索时，重置为自动滚动
     const newConversation = reset
       ? []
@@ -646,6 +673,9 @@ const AiQaContent: React.FC<{
       onError: error => {
         setLoading(false);
         setThinking(4);
+        if (!nonceRef.current) {
+          resetConversationIdentity();
+        }
         if (error instanceof SSEHttpError && error.status === 401) {
           const current = window.location;
           window.location.href = `${basePath}/auth/login?redirect=${encodeURIComponent(current.pathname + current.search)}`;
@@ -656,6 +686,9 @@ const AiQaContent: React.FC<{
       onCancel: () => {
         setLoading(false);
         setThinking(4);
+        if (!nonceRef.current) {
+          resetConversationIdentity();
+        }
         setConversation(prev => {
           const newConversation = [...prev];
           const lastConversation = newConversation[newConversation.length - 1];

@@ -609,6 +609,38 @@ docker compose down
 
 不要加 `-v`，否则可能删除数据卷。当前部署主要使用 `deploy/production/data/` 目录保存数据，也不要手动删除该目录。
 
+### 12.7 公网域名经过腾讯 EdgeOne / CDN 后问答异常
+
+如果内网 IP 访问 Wiki 问答正常，但公网域名经过腾讯 EdgeOne、CDN、WAF 或其他边缘加速后出现：
+
+```text
+network error
+nonce is required
+```
+
+通常不是 NAS 本机模型或 PandaWiki 服务不通，而是边缘节点没有按动态 SSE 长连接处理前台问答接口。
+
+在边缘加速控制台添加高优先级规则：
+
+| 路径 | 建议配置 |
+| --- | --- |
+| `/share/v1/chat/message` | 不缓存；允许 `POST`；允许 `text/event-stream`；关闭页面优化、HTML 改写、响应体改写；回源响应超时设置为平台允许的较大值，建议不少于 300 秒 |
+| `/share/v1/chat/widget` | 同上 |
+| `/share/v1/chat/search` | 不缓存；允许 `POST` |
+| `/share/v1/captcha/*` | 不缓存；允许 `POST`；不要叠加 Bot/JS 二次挑战 |
+| `/share/v1/common/file/upload*` | 不缓存；允许上传请求体 |
+| `/share/v1/*` | 不确定具体规则时，先统一按动态接口不缓存处理 |
+
+同时确认：
+
+- 回源地址指向 PandaWiki 前台站点对应入口；
+- 公网域名配置的回源端口与后台 Wiki 站点配置的 HTTP / HTTPS 端口一致；
+- WAF / Bot 管理先放行 `/share/v1/chat/*` 和 `/share/v1/captcha/*`；
+- 不要对问答接口做缓存、压缩合并、页面优化或响应体改写；
+- 保留 `Host`、`X-Forwarded-For`、`X-Real-IP` 等回源请求头。
+
+修改后用浏览器无痕窗口重新测试，Network 中 `/share/v1/chat/message` 或 `/share/v1/chat/widget` 应该保持 `200` 且响应头为 `content-type: text/event-stream`，请求会在生成回答期间保持连接，而不是立即失败。
+
 ---
 
 ## 13. 参考来源
@@ -616,6 +648,8 @@ docker compose down
 - PandaWiki 官方安装文档：<https://pandawiki.docs.baizhi.cloud/node/01971602-bb4e-7c90-99df-6d3c38cfd6d5>
 - PandaWiki 官方生产 Compose 文件：<https://release.baizhi.cloud/panda-wiki/docker-compose.yml>
 - 绿联 NAS Docker / Docker Compose 说明：<https://nas.ugreen.com/blogs/knowledge/docker-docker-compose-ugreen-nas>
+- 腾讯云 EdgeOne 节点缓存 TTL：<https://cloud.tencent.com/document/product/1552/70777>
+- 腾讯云 EdgeOne 520/524 状态码排障：<https://cloud.tencent.com/document/product/1552/118268>
 
 本文档的部署命令以本项目二开版源码为准；除本地源码构建二开服务外，生产 Compose 拓扑、数据目录和运维习惯尽量贴近 PandaWiki 官方手动部署方式。
 
