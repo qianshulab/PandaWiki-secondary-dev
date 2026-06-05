@@ -156,11 +156,55 @@ find_compose() {
     echo "docker compose"
     return 0
   fi
+
   if command -v docker-compose >/dev/null 2>&1; then
-    echo "docker-compose"
-    return 0
+    local legacy_version
+    legacy_version="$(docker-compose version --short 2>/dev/null || docker-compose version 2>/dev/null || true)"
+    if [[ "$legacy_version" =~ (^|[[:space:]])v?2\. ]]; then
+      echo "docker-compose"
+      return 0
+    fi
+    if [[ "${PANDAWIKI_ALLOW_LEGACY_COMPOSE:-}" == "1" ]]; then
+      echo "警告：未检测到 Docker Compose v2，正在按 PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 使用旧版 docker-compose：${legacy_version:-unknown}" >&2
+      echo "docker-compose"
+      return 0
+    fi
+    cat >&2 <<EOF
+检测到旧版 docker-compose：${legacy_version:-unknown}。
+本生产部署默认要求 Docker Compose v2（docker compose）。
+
+Ubuntu / Debian:
+  sudo apt-get update
+  sudo apt-get install -y docker-compose-plugin
+  docker compose version
+
+CentOS / RHEL / Rocky / AlmaLinux:
+  sudo yum install -y docker-compose-plugin
+  docker compose version
+
+如果仓库没有 docker-compose-plugin：
+  curl -fsSL https://get.docker.com | sudo sh
+  sudo systemctl enable --now docker
+  docker compose version
+
+临时兼容旧版 docker-compose（不推荐）：
+  PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 bash manager.sh install
+EOF
+    return 1
   fi
-  echo "未检测到 docker compose 或 docker-compose，请先安装 Docker Compose。" >&2
+
+  cat >&2 <<'EOF'
+未检测到 Docker Compose v2（docker compose）。
+
+Ubuntu / Debian:
+  sudo apt-get update
+  sudo apt-get install -y docker-compose-plugin
+  docker compose version
+
+CentOS / RHEL / Rocky / AlmaLinux:
+  sudo yum install -y docker-compose-plugin
+  docker compose version
+EOF
   return 1
 }
 

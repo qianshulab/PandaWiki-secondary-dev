@@ -11,6 +11,43 @@
 - `web/admin/Dockerfile`
 - `web/admin/server.conf`
 
+## 1.1 Docker Compose 要求
+
+生产部署默认要求 Docker Compose v2，也就是命令：
+
+```bash
+docker compose version
+```
+
+如果服务器只有旧版 `docker-compose`（Compose v1），请先安装 v2 插件：
+
+```bash
+# Ubuntu / Debian
+sudo apt-get update
+sudo apt-get install -y docker-compose-plugin
+docker compose version
+```
+
+```bash
+# CentOS / RHEL / Rocky / AlmaLinux
+sudo yum install -y docker-compose-plugin
+docker compose version
+```
+
+如果系统仓库没有 `docker-compose-plugin`，可以使用 Docker 官方安装脚本重新安装 Docker Engine：
+
+```bash
+curl -fsSL https://get.docker.com | sudo sh
+sudo systemctl enable --now docker
+docker compose version
+```
+
+临时兼容旧版 `docker-compose` 的方式如下，但生产环境不推荐：
+
+```bash
+PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 bash manager.sh install
+```
+
 ## 2. 一键启动
 
 ### 2.0 原版风格部署管理入口
@@ -104,9 +141,6 @@ bash scripts/setup_production.sh --auto --start
 cd D:\AI WorkSpace\PandaWiki
 docker compose -f deploy/production/docker-compose.yml up -d --build
 ```
-
-> 当前 WSL 环境同时可使用旧版 `docker-compose`：  
-> `docker-compose -f deploy/production/docker-compose.yml up -d --build`
 
 ## 3. 服务端口与入口
 

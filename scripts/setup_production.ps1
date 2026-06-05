@@ -143,10 +143,53 @@ function Find-ComposeCommand {
   }
 
   if (Get-Command docker-compose -ErrorAction SilentlyContinue) {
-    return @{ Exe = "docker-compose"; Args = @() }
+    $legacyVersion = ""
+    try {
+      $legacyVersion = (& docker-compose version --short 2>$null | Select-Object -First 1)
+      if ([string]::IsNullOrWhiteSpace($legacyVersion)) {
+        $legacyVersion = (& docker-compose version 2>$null | Select-Object -First 1)
+      }
+    } catch {
+      $legacyVersion = "unknown"
+    }
+
+    if ($legacyVersion -match '(^|\s)v?2\.') {
+      return @{ Exe = "docker-compose"; Args = @() }
+    }
+
+    if ($env:PANDAWIKI_ALLOW_LEGACY_COMPOSE -eq "1") {
+      Write-Host "警告：未检测到 Docker Compose v2，正在按 PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 使用旧版 docker-compose：$legacyVersion" -ForegroundColor Yellow
+      return @{ Exe = "docker-compose"; Args = @() }
+    }
+
+    throw @"
+检测到旧版 docker-compose：$legacyVersion。
+本生产部署默认要求 Docker Compose v2（docker compose）。
+
+Windows / Docker Desktop：
+  请启动 Docker Desktop，并确认命令行可执行：docker compose version
+
+Linux / WSL：
+  sudo apt-get update
+  sudo apt-get install -y docker-compose-plugin
+  docker compose version
+
+临时兼容旧版 docker-compose（不推荐）：
+  `$env:PANDAWIKI_ALLOW_LEGACY_COMPOSE="1"; powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Auto -Start
+"@
   }
 
-  throw "未检测到 docker compose 或 docker-compose，请先安装 Docker Compose。"
+  throw @"
+未检测到 Docker Compose v2（docker compose）。
+
+Windows / Docker Desktop：
+  请启动 Docker Desktop，并确认命令行可执行：docker compose version
+
+Linux / WSL：
+  sudo apt-get update
+  sudo apt-get install -y docker-compose-plugin
+  docker compose version
+"@
 }
 
 function Invoke-Compose([hashtable]$Compose, [string[]]$ExtraArgs, [string]$WorkDir) {
