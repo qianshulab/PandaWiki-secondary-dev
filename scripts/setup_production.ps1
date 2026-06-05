@@ -157,11 +157,6 @@ function Find-ComposeCommand {
       return @{ Exe = "docker-compose"; Args = @() }
     }
 
-    if ($env:PANDAWIKI_ALLOW_LEGACY_COMPOSE -eq "1") {
-      Write-Host "警告：未检测到 Docker Compose v2，正在按 PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 使用旧版 docker-compose：$legacyVersion" -ForegroundColor Yellow
-      return @{ Exe = "docker-compose"; Args = @() }
-    }
-
     throw @"
 检测到旧版 docker-compose：$legacyVersion。
 本生产部署默认要求 Docker Compose v2（docker compose）。
@@ -173,9 +168,6 @@ Linux / WSL：
   sudo apt-get update
   sudo apt-get install -y docker-compose-plugin
   docker compose version
-
-临时兼容旧版 docker-compose（不推荐）：
-  `$env:PANDAWIKI_ALLOW_LEGACY_COMPOSE="1"; powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Auto -Start
 "@
   }
 

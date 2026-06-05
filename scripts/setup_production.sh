@@ -226,11 +226,6 @@ find_compose() {
       echo "docker-compose"
       return 0
     fi
-    if [[ "${PANDAWIKI_ALLOW_LEGACY_COMPOSE:-}" == "1" ]]; then
-      echo "警告：未检测到 Docker Compose v2，正在按 PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 使用旧版 docker-compose：${legacy_version:-unknown}" >&2
-      echo "docker-compose"
-      return 0
-    fi
     echo "检测到旧版 docker-compose：${legacy_version:-unknown}，将按官方安装器风格自动安装 Docker Compose v2 插件。" >&2
   fi
 

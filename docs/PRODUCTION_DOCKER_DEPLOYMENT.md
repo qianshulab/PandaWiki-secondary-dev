@@ -31,11 +31,7 @@ docker compose version
 /usr/local/lib/docker/cli-plugins/docker-compose
 ```
 
-如果自动安装失败，可手动安装 Docker Compose v2 后重试；临时兼容旧版 `docker-compose` 的方式如下，但生产环境不推荐：
-
-```bash
-PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 bash manager.sh install
-```
+如果自动安装失败，可手动安装 Docker Compose v2 后重试。
 
 ## 2. 一键启动
 

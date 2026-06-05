@@ -105,11 +105,6 @@ compose_cmd() {
       printf 'docker-compose'
       return 0
     fi
-    if [[ "${PANDAWIKI_ALLOW_LEGACY_COMPOSE:-}" == "1" ]]; then
-      warn "未检测到 Docker Compose v2，正在按 PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 使用旧版 docker-compose：${legacy_version:-unknown}"
-      printf 'docker-compose'
-      return 0
-    fi
     warn "检测到旧版 docker-compose：${legacy_version:-unknown}，将按官方安装器风格自动安装 Docker Compose v2 插件。"
   fi
 
@@ -127,9 +122,6 @@ compose_cmd() {
   curl -fsSL https://get.docker.com | sh
   systemctl enable --now docker
   docker compose version
-
-临时兼容旧版 docker-compose（不推荐，仅用于已验证环境）：
-  PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 bash manager.sh install
 EOF
   exit 1
 }
