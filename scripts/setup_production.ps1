@@ -70,6 +70,14 @@ function Test-SafeSecret([string]$value) {
   return $value -match '^[A-Za-z0-9._~!@%+=:,/-]+$'
 }
 
+function Test-ComposeVersionAtLeast2([string]$value) {
+  $m = [regex]::Match($value, 'v?(\d+)(\.\d+){0,2}')
+  if (-not $m.Success) {
+    return $false
+  }
+  return ([int]$m.Groups[1].Value -ge 2)
+}
+
 function Read-RequiredSecret([string]$Name, [int]$MinLength = 12) {
   while ($true) {
     $secure1 = Read-Host "请输入 $Name" -AsSecureString
@@ -153,13 +161,13 @@ function Find-ComposeCommand {
       $legacyVersion = "unknown"
     }
 
-    if ($legacyVersion -match '(^|\s)v?2\.') {
+    if (Test-ComposeVersionAtLeast2 $legacyVersion) {
       return @{ Exe = "docker-compose"; Args = @() }
     }
 
     throw @"
 检测到旧版 docker-compose：$legacyVersion。
-本生产部署默认要求 Docker Compose v2（docker compose）。
+本生产部署默认要求 Docker Compose v2+。
 
 Windows / Docker Desktop：
   请启动 Docker Desktop，并确认命令行可执行：docker compose version
@@ -172,7 +180,7 @@ Linux / WSL：
   }
 
   throw @"
-未检测到 Docker Compose v2（docker compose）。
+未检测到 Docker Compose v2+。
 
 Windows / Docker Desktop：
   请启动 Docker Desktop，并确认命令行可执行：docker compose version

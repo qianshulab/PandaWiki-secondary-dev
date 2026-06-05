@@ -17,7 +17,7 @@
 
 - 使用 root 执行安装管理器；
 - 支持 amd64/x86_64 与 arm64/aarch64 架构；
-- 缺少 Docker Compose v2 时自动安装 CLI plugin。
+- 使用 Docker Compose v2+。
 
 生产部署优先使用 Docker Compose v2，也就是命令：
 
@@ -25,19 +25,9 @@
 docker compose version
 ```
 
-为保持与官方安装器行为一致，如果服务器缺少 `docker compose`，`manager.sh` 会在 root 环境下自动下载并安装 Docker Compose v2 CLI plugin 到：
+如果服务器没有 `docker compose`，但已有 `docker-compose` 且版本号为 2 或更高，也会继续使用该命令。例如 `docker-compose version --short` 输出 `5.1.4` 时会被视为可用。
 
-```bash
-/usr/local/lib/docker/cli-plugins/docker-compose
-```
-
-下载源使用官方安装器中包含的 Docker Compose plugin 来源，国内镜像优先：
-
-1. 阿里云 Docker CE 镜像
-2. 腾讯云 Docker CE 镜像
-3. GitHub Docker Compose Release
-
-如果自动安装失败，可手动安装 Docker Compose v2 后重试。
+如果 Compose 版本低于 2，或两个命令都不存在，请先按官方环境要求安装 Docker Compose v2+ 后重试。
 
 ## 2. 一键启动
 

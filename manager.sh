@@ -99,87 +99,28 @@ compose_cmd() {
   fi
 
   if command -v docker-compose >/dev/null 2>&1; then
-    local legacy_version
-    legacy_version="$(docker-compose version --short 2>/dev/null || docker-compose version 2>/dev/null || true)"
-    if [[ "$legacy_version" =~ (^|[[:space:]])v?2\. ]]; then
+    local compose_version
+    compose_version="$(docker-compose version --short 2>/dev/null || docker-compose version 2>/dev/null || true)"
+    if compose_version_at_least_2 "$compose_version"; then
       printf 'docker-compose'
       return 0
     fi
-    warn "检测到旧版 docker-compose：${legacy_version:-unknown}，将按官方安装器风格自动安装 Docker Compose v2 插件。"
+    err "Docker Compose version too low: ${compose_version:-unknown}"
+    err "请安装 Docker Compose v2+ 后重试。"
+    exit 1
   fi
 
-  install_compose_plugin
-
-  if docker compose version >/dev/null 2>&1; then
-    printf 'docker compose'
-    return 0
-  fi
-
-  err "Docker Compose v2 自动安装失败。"
-  cat >&2 <<'EOF'
-
-请手动安装 Docker Compose v2 插件后重试：
-  curl -fsSL https://get.docker.com | sh
-  systemctl enable --now docker
-  docker compose version
-EOF
+  err "docker compose not installed"
+  err "请先按官方部署要求安装 Docker Compose v2+ 后重试。"
   exit 1
 }
 
-install_compose_plugin() {
-  if docker compose version >/dev/null 2>&1; then
-    return 0
-  fi
-
-  local raw_arch arch plugin_dir target tmp urls url
-  raw_arch="$(uname -m)"
-  case "$raw_arch" in
-    x86_64|amd64) arch="x86_64" ;;
-    aarch64|arm64|armv8l) arch="aarch64" ;;
-    *)
-      err "当前架构不支持自动安装 Docker Compose plugin：$raw_arch"
-      exit 1
-      ;;
-  esac
-
-  plugin_dir="/usr/local/lib/docker/cli-plugins"
-  target="$plugin_dir/docker-compose"
-  tmp="/tmp/pandawiki-docker-compose-plugin.$$"
-
-  mkdir -p "$plugin_dir"
-
-  urls=(
-    "https://mirrors.aliyun.com/docker-ce/linux/static/stable/$arch/docker-compose-linux-$arch"
-    "https://mirrors.cloud.tencent.com/docker-ce/linux/static/stable/$arch/docker-compose-linux-$arch"
-    "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$arch"
-  )
-
-  log "未检测到 Docker Compose v2，正在自动安装 Compose plugin..."
-  for url in "${urls[@]}"; do
-    warn "尝试下载：$url"
-    rm -f "$tmp"
-    if command -v curl >/dev/null 2>&1; then
-      curl -fsSLk --connect-timeout 15 --retry 2 -o "$tmp" "$url" || true
-    elif command -v wget >/dev/null 2>&1; then
-      wget --no-check-certificate -q -O "$tmp" "$url" || true
-    else
-      err "未检测到 curl 或 wget，无法自动下载 Docker Compose plugin。"
-      exit 1
-    fi
-
-    if [[ -s "$tmp" ]]; then
-      install -m 0755 "$tmp" "$target"
-      rm -f "$tmp"
-      if docker compose version >/dev/null 2>&1; then
-        log "Docker Compose v2 安装完成：$(docker compose version)"
-        return 0
-      fi
-    fi
-  done
-
-  rm -f "$tmp"
-  err "无法自动下载或启用 Docker Compose plugin。"
-  exit 1
+compose_version_at_least_2() {
+  local raw="$1" major
+  raw="$(printf '%s' "$raw" | grep -Eo 'v?[0-9]+(\.[0-9]+){0,2}' | head -n 1 || true)"
+  raw="${raw#v}"
+  major="${raw%%.*}"
+  [[ "$major" =~ ^[0-9]+$ ]] && (( major >= 2 ))
 }
 
 check_docker_access() {
