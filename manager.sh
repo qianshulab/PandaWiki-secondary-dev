@@ -149,9 +149,9 @@ install_compose_plugin() {
   mkdir -p "$plugin_dir"
 
   urls=(
-    "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$arch"
     "https://mirrors.aliyun.com/docker-ce/linux/static/stable/$arch/docker-compose-linux-$arch"
     "https://mirrors.cloud.tencent.com/docker-ce/linux/static/stable/$arch/docker-compose-linux-$arch"
+    "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$arch"
   )
 
   log "未检测到 Docker Compose v2，正在自动安装 Compose plugin..."

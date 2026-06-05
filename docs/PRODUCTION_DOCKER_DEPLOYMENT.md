@@ -31,6 +31,12 @@ docker compose version
 /usr/local/lib/docker/cli-plugins/docker-compose
 ```
 
+下载源使用官方安装器中包含的 Docker Compose plugin 来源，国内镜像优先：
+
+1. 阿里云 Docker CE 镜像
+2. 腾讯云 Docker CE 镜像
+3. GitHub Docker Compose Release
+
 如果自动安装失败，可手动安装 Docker Compose v2 后重试。
 
 ## 2. 一键启动
