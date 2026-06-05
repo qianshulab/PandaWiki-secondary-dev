@@ -194,8 +194,12 @@ const AiQaContent: React.FC<{
   };
 
   const onSuggestionClick = (text: string) => {
+    const question = text.trim();
+    if (!question) return;
     setInput('');
-    onSearch(text);
+    setShowFuzzySuggestions(false);
+    setFuzzySuggestions([]);
+    onSearch(question, true);
   };
 
   // 处理图片选择（支持多张）

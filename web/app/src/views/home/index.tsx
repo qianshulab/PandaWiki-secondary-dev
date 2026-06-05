@@ -221,18 +221,29 @@ const componentMap = {
 
 const Welcome = () => {
   const basePath = useBasePath();
-  const { mobile = false, kbDetail, setQaModalOpen } = useStore();
+  const {
+    mobile = false,
+    kbDetail,
+    setQaModalOpen,
+    setPendingQaQuestion,
+  } = useStore();
   const settings = kbDetail?.settings;
   const onBannerSearch = (
     searchText: string,
     type: 'chat' | 'search' = 'chat',
   ) => {
     if (searchText.trim()) {
+      const question = searchText.trim();
       if (type === 'chat') {
-        sessionStorage.setItem('chat_search_query', searchText.trim());
+        if (setPendingQaQuestion) {
+          sessionStorage.removeItem('chat_search_query');
+          setPendingQaQuestion(question);
+        } else {
+          sessionStorage.setItem('chat_search_query', question);
+        }
         setQaModalOpen?.(true);
       } else {
-        sessionStorage.setItem('chat_search_query', searchText.trim());
+        sessionStorage.setItem('chat_search_query', question);
       }
     }
   };

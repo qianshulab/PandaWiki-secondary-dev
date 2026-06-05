@@ -39,6 +39,8 @@ interface StoreContextType {
   setCatalogWidth?: (value: number) => void;
   qaModalOpen?: boolean;
   setQaModalOpen?: (value: boolean) => void;
+  pendingQaQuestion?: string;
+  setPendingQaQuestion?: (value: string) => void;
   /** 栏目列表，多栏目时展示导航栏 */
   navList?: NavItem[];
   /** 当前选中的栏目 id */
@@ -106,6 +108,7 @@ export default function StoreProvider({
     return initialTree;
   });
   const [qaModalOpen, setQaModalOpen] = useState(false);
+  const [pendingQaQuestion, setPendingQaQuestion] = useState('');
   const [navList] = useState<NavItem[]>(initialNavList);
   const [navDataMap] =
     useState<Record<string, NodeListItem[]>>(initialNavDataMap);
@@ -197,6 +200,8 @@ export default function StoreProvider({
         },
         qaModalOpen,
         setQaModalOpen,
+        pendingQaQuestion,
+        setPendingQaQuestion,
         navList,
         selectedNavId,
         setSelectedNavId,

@@ -71,6 +71,7 @@ const Header = ({ isDocPage = false, isWelcomePage = false }: HeaderProps) => {
     kbDetail,
     catalogWidth,
     setQaModalOpen,
+    setPendingQaQuestion,
     authInfo,
   } = useStore();
   const basePath = useBasePath();
@@ -81,11 +82,17 @@ const Header = ({ isDocPage = false, isWelcomePage = false }: HeaderProps) => {
 
   const handleSearch = (value?: string, type: 'chat' | 'search' = 'chat') => {
     if (value?.trim()) {
+      const question = value.trim();
       if (type === 'chat') {
-        sessionStorage.setItem('chat_search_query', value.trim());
+        if (setPendingQaQuestion) {
+          sessionStorage.removeItem('chat_search_query');
+          setPendingQaQuestion(question);
+        } else {
+          sessionStorage.setItem('chat_search_query', question);
+        }
         setQaModalOpen?.(true);
       } else {
-        sessionStorage.setItem('chat_search_query', value.trim());
+        sessionStorage.setItem('chat_search_query', question);
       }
     }
   };
@@ -133,15 +140,22 @@ export const WelcomeHeader = ({
     kbDetail,
     catalogWidth,
     setQaModalOpen,
+    setPendingQaQuestion,
     authInfo,
   } = useStore();
   const handleSearch = (value?: string, type: 'chat' | 'search' = 'chat') => {
     if (value?.trim()) {
+      const question = value.trim();
       if (type === 'chat') {
-        sessionStorage.setItem('chat_search_query', value.trim());
+        if (setPendingQaQuestion) {
+          sessionStorage.removeItem('chat_search_query');
+          setPendingQaQuestion(question);
+        } else {
+          sessionStorage.setItem('chat_search_query', question);
+        }
         setQaModalOpen?.(true);
       } else {
-        sessionStorage.setItem('chat_search_query', value.trim());
+        sessionStorage.setItem('chat_search_query', question);
       }
     }
   };

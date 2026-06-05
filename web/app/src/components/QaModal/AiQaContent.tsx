@@ -140,6 +140,7 @@ const AiQaContent: React.FC<{
   const { palette } = useTheme();
   const messageIdRef = useRef('');
   const lastResultExpendRef = useRef(false);
+  const pendingQuestionRef = useRef('');
   const [fullAnswer, setFullAnswer] = useState<string>('');
   const [conversation, setConversation] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -197,8 +198,12 @@ const AiQaContent: React.FC<{
   };
 
   const onSuggestionClick = (text: string) => {
+    const question = text.trim();
+    if (!question) return;
     setInput('');
-    onSearch(text);
+    setShowFuzzySuggestions(false);
+    setFuzzySuggestions([]);
+    onSearch(question, true);
   };
 
   // 处理图片选择（支持多张）
@@ -581,11 +586,34 @@ const AiQaContent: React.FC<{
     setThinking(4);
   };
 
-  const { mobile = false, kbDetail, qaModalOpen } = useStore();
+  const {
+    mobile = false,
+    kbDetail,
+    qaModalOpen,
+    pendingQaQuestion,
+    setPendingQaQuestion,
+  } = useStore();
 
   const isFeedbackEnabled =
     // @ts-ignore
     kbDetail?.settings?.ai_feedback_settings?.is_enabled ?? true;
+
+  useEffect(() => {
+    const question = pendingQaQuestion?.trim();
+    if (!qaModalOpen || !question || pendingQuestionRef.current === question) {
+      return;
+    }
+
+    pendingQuestionRef.current = question;
+    setPendingQaQuestion?.('');
+    onSearch(question, true);
+  }, [qaModalOpen, pendingQaQuestion]);
+
+  useEffect(() => {
+    if (!pendingQaQuestion) {
+      pendingQuestionRef.current = '';
+    }
+  }, [pendingQaQuestion]);
 
   const handleScore = async (
     message_id: string,
