@@ -63,7 +63,6 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - SUBNET_PREFIX=${SUBNET_PREFIX}
-      - CADDY_ADMIN_LISTEN=${CADDY_ADMIN_LISTEN:-/var/run/caddy/caddy-admin.sock}
     networks:
       panda-wiki:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.2"

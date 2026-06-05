@@ -521,7 +521,7 @@ sudo bash manager.sh install
 保存配置失败，请检查端口或证书配置
 ```
 
-先确认已经拉取包含 Caddy Unix Socket 修复的新版本，并重建 API 镜像：
+先确认已经拉取包含 Caddy 同步配置修复的新版本，并重建 API 镜像：
 
 ```bash
 cd /volume1/docker/pandawiki
@@ -547,11 +547,7 @@ HTTPS：关闭
 私钥文件：留空
 ```
 
-如需覆盖 Caddy 容器内的 admin socket 路径，可在 `.env` 中设置：
-
-```text
-CADDY_ADMIN_LISTEN=/var/run/caddy/caddy-admin.sock
-```
+说明：二开版会按官方方式通过 `CADDY_ADMIN=unix//var/run/caddy/caddy-admin.sock` 维持 Caddy 管理端监听，不需要手动配置 Caddy 管理 socket。
 
 ### 12.4 端口被占用
 

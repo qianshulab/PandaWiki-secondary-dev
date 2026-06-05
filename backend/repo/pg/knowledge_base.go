@@ -10,7 +10,6 @@ import (
 	"maps"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -310,18 +309,7 @@ func (r *KnowledgeBaseRepository) SyncKBAccessSettingsToCaddy(ctx context.Contex
 			},
 		}
 	}
-	adminListen := strings.TrimSpace(r.config.CaddyAdminListen)
-	if adminListen == "" {
-		adminListen = "/var/run/caddy/caddy-admin.sock"
-	}
-	if !strings.HasPrefix(adminListen, "unix/") {
-		adminListen = "unix/" + adminListen
-	}
-
 	config := map[string]any{
-		"admin": map[string]any{
-			"listen": adminListen,
-		},
 		"apps": apps,
 	}
 	newBody, _ := json.Marshal(config)
