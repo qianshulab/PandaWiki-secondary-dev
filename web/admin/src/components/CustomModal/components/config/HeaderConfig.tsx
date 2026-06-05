@@ -103,10 +103,6 @@ const HeaderConfig = ({ data, setIsEdit, isEdit }: CardWebHeaderProps) => {
       },
     };
     debouncedDispatch(previewData);
-
-    return () => {
-      debouncedDispatch.cancel();
-    };
   }, [
     allow_theme_switching,
     btns,

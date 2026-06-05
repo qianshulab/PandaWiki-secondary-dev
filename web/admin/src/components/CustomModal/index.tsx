@@ -25,6 +25,7 @@ import {
   TYPE_TO_CONFIG_LABEL,
 } from './constants';
 import { v4 as uuidv4 } from 'uuid';
+import { flushPendingAppPreviewData } from '@/hooks/useDebounceAppPreviewData';
 
 type WebAppLandingConfigWithId = DomainWebAppLandingConfigResp & { id: string };
 
@@ -129,14 +130,16 @@ const CustomModal = ({
     handleInitComponents(res);
   };
   const onSubmit = () => {
-    if (!info || !appPreviewData) return;
+    const latestAppPreviewData = flushPendingAppPreviewData(appPreviewData);
+    if (!info || !latestAppPreviewData) return;
 
     const submitWebAppLandingConfigs = components
       .map(item => {
         if (item.name === 'header' || item.name === 'footer') return null;
-        const config = appPreviewData.settings?.web_app_landing_configs?.find(
-          (con: any) => con.id === item.id,
-        );
+        const config =
+          latestAppPreviewData.settings?.web_app_landing_configs?.find(
+            (con: any) => con.id === item.id,
+          );
 
         const params: any = {
           type: config!.type,
@@ -164,14 +167,14 @@ const CustomModal = ({
       {
         settings: {
           ...info.settings,
-          ...appPreviewData.settings,
+          ...latestAppPreviewData.settings,
           web_app_landing_configs: submitWebAppLandingConfigs,
         },
         kb_id,
       },
     ).then(() => {
       refresh({
-        ...appPreviewData.settings,
+        ...latestAppPreviewData.settings,
         web_app_landing_configs: submitWebAppLandingConfigs,
       });
       message.success('保存成功');
