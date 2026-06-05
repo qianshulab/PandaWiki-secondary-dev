@@ -13,6 +13,12 @@
 
 ## 1.1 Docker Compose 兼容策略
 
+与官方安装入口保持一致：
+
+- 使用 root 执行安装管理器；
+- 支持 amd64/x86_64 与 arm64/aarch64 架构；
+- 缺少 Docker Compose v2 时自动安装 CLI plugin。
+
 生产部署优先使用 Docker Compose v2，也就是命令：
 
 ```bash
@@ -39,6 +45,12 @@ PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 bash manager.sh install
 
 ```bash
 bash manager.sh
+```
+
+生产服务器建议按官方方式使用 root 执行：
+
+```bash
+sudo bash manager.sh install
 ```
 
 常用命令：

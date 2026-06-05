@@ -163,7 +163,6 @@ install_compose_plugin() {
   case "$raw_arch" in
     x86_64|amd64) arch="x86_64" ;;
     aarch64|arm64|armv8l) arch="aarch64" ;;
-    armv7l|armhf) arch="armv7" ;;
     *)
       echo "当前架构不支持自动安装 Docker Compose plugin：$raw_arch" >&2
       return 1

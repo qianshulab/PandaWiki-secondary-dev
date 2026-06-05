@@ -31,6 +31,8 @@ PandaWiki 二开版部署管理脚本
   密码：安装时自动生成并输出，也会写入 deploy/production/.env
 
 注意：
+  - 原版一致：请使用 root 执行，例如 sudo bash manager.sh install。
+  - 原版一致：仅支持 amd64/x86_64 与 arm64/aarch64 架构。
   - 默认安装行为对齐原版：自动生成生产密码/密钥，并在安装完成后输出后台密码。
   - 如需手动指定密码，可执行 bash manager.sh config 进入交互式配置。
   - 已有生产数据时不要随意重新生成 .env，否则可能导致数据库/对象存储/MQ 等服务无法读取旧数据。
@@ -58,6 +60,32 @@ require_project() {
     err "未找到 $SETUP_SCRIPT。"
     exit 1
   fi
+}
+
+require_root() {
+  if [[ "$(id -u)" != "0" ]]; then
+    err "This script must be run as root"
+    err "请使用 root 执行：sudo bash manager.sh ${1:-install}"
+    exit 1
+  fi
+}
+
+check_arch() {
+  local raw_arch
+  raw_arch="$(uname -m)"
+  case "$raw_arch" in
+    x86_64|amd64)
+      log "Architecture: x86_64"
+      ;;
+    aarch64|arm64|armv8l)
+      log "Architecture: aarch64"
+      ;;
+    *)
+      err "This installer only supports amd64 (x86_64) and arm64 (aarch64) architectures"
+      err "Current architecture: $raw_arch"
+      exit 1
+      ;;
+  esac
 }
 
 compose_cmd() {
@@ -111,24 +139,11 @@ install_compose_plugin() {
     return 0
   fi
 
-  if [[ "$(id -u)" != "0" ]]; then
-    err "未检测到 Docker Compose v2，且当前不是 root，无法自动安装 Compose 插件。"
-    cat >&2 <<'EOF'
-
-请使用 root 运行，或手动安装后重试：
-  sudo bash manager.sh install
-  docker compose version
-
-EOF
-    exit 1
-  fi
-
   local raw_arch arch plugin_dir target tmp urls url
   raw_arch="$(uname -m)"
   case "$raw_arch" in
     x86_64|amd64) arch="x86_64" ;;
     aarch64|arm64|armv8l) arch="aarch64" ;;
-    armv7l|armhf) arch="armv7" ;;
     *)
       err "当前架构不支持自动安装 Docker Compose plugin：$raw_arch"
       exit 1
@@ -415,6 +430,8 @@ EOF
 }
 
 main() {
+  check_arch
+  require_root "${1:-install}"
   require_project
   case "${1:-menu}" in
     install|up) install ;;
