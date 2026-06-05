@@ -13,6 +13,43 @@
 
 ## 2. 一键启动
 
+### 2.1 推荐：交互式生成生产配置
+
+Windows / PowerShell：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1
+```
+
+Linux / macOS / WSL：
+
+```bash
+bash scripts/setup_production.sh
+```
+
+脚本会交互式要求输入并二次确认以下生产密码/密钥：
+
+- `ADMIN_PASSWORD`
+- `POSTGRES_PASSWORD`
+- `NATS_PASSWORD`
+- `S3_SECRET_KEY` / `MINIO_ROOT_PASSWORD`
+- `QDRANT_API_KEY`
+- `JWT_SECRET`（可直接回车自动生成）
+
+脚本会生成 `deploy/production/.env`。如果该文件已存在，会先自动备份为 `.env.bak.<时间戳>`。
+
+如需生成配置后直接构建并启动：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Start
+```
+
+```bash
+bash scripts/setup_production.sh --start
+```
+
+### 2.2 手动启动
+
 ```bash
 cd D:\AI WorkSpace\PandaWiki
 docker compose -f deploy/production/docker-compose.yml up -d --build
