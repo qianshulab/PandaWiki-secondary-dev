@@ -1,0 +1,272 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_NAME="PandaWiki 二开版"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEPLOY_DIR="$ROOT_DIR/deploy/production"
+ENV_FILE="$DEPLOY_DIR/.env"
+SETUP_SCRIPT="$ROOT_DIR/scripts/setup_production.sh"
+
+usage() {
+  cat <<'EOF'
+PandaWiki 二开版部署管理脚本
+
+用法：
+  bash manager.sh                 # 打开交互菜单
+  bash manager.sh install          # 初始化配置并启动/构建
+  bash manager.sh start            # 启动服务
+  bash manager.sh stop             # 停止服务
+  bash manager.sh restart          # 重启服务
+  bash manager.sh status           # 查看状态
+  bash manager.sh logs [service]   # 查看日志，例如：bash manager.sh logs pandawiki-api
+  bash manager.sh update           # 拉取当前分支最新代码并重建启动
+  bash manager.sh config           # 交互式重新生成 deploy/production/.env
+  bash manager.sh uninstall        # 停止并卸载，可选删除数据卷
+  bash manager.sh help             # 显示帮助
+
+常用入口：
+  后台：https://服务器IP:2443/login
+  账号：admin
+  密码：安装时交互输入的 ADMIN_PASSWORD
+
+注意：
+  - 生产密码不会写死在脚本中，会交互式输入并写入 deploy/production/.env。
+  - 已有生产数据时不要随意重新生成 .env，否则可能导致数据库/对象存储/MQ 等服务无法读取旧数据。
+EOF
+}
+
+log() {
+  printf '\033[1;36m[%s]\033[0m %s\n' "$APP_NAME" "$*"
+}
+
+warn() {
+  printf '\033[1;33m[WARN]\033[0m %s\n' "$*" >&2
+}
+
+err() {
+  printf '\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2
+}
+
+require_project() {
+  if [[ ! -f "$DEPLOY_DIR/docker-compose.yml" ]]; then
+    err "未找到 $DEPLOY_DIR/docker-compose.yml，请确认 manager.sh 位于项目根目录。"
+    exit 1
+  fi
+  if [[ ! -f "$SETUP_SCRIPT" ]]; then
+    err "未找到 $SETUP_SCRIPT。"
+    exit 1
+  fi
+}
+
+compose_cmd() {
+  if ! command -v docker >/dev/null 2>&1; then
+    err "未检测到 docker，请先安装 Docker。"
+    exit 1
+  fi
+  if docker compose version >/dev/null 2>&1; then
+    printf 'docker compose'
+    return 0
+  fi
+  if command -v docker-compose >/dev/null 2>&1; then
+    printf 'docker-compose'
+    return 0
+  fi
+  err "未检测到 docker compose 或 docker-compose，请先安装 Docker Compose。"
+  exit 1
+}
+
+check_docker_access() {
+  if ! docker info >/dev/null 2>&1; then
+    err "当前用户无法访问 Docker。请使用 root、加入 docker 用户组，或确认 Docker 服务已启动。"
+    exit 1
+  fi
+}
+
+compose() {
+  local cmd
+  cmd="$(compose_cmd)"
+  # shellcheck disable=SC2086
+  (cd "$DEPLOY_DIR" && $cmd "$@")
+}
+
+ensure_env() {
+  if [[ -f "$ENV_FILE" ]]; then
+    return 0
+  fi
+  warn "未发现生产配置 $ENV_FILE，将开始交互式生成。"
+  bash "$SETUP_SCRIPT" --no-start
+}
+
+install() {
+  require_project
+  check_docker_access
+  ensure_env
+  log "开始构建并启动生产服务..."
+  compose up -d --build
+  status
+  cat <<EOF
+
+部署完成。
+
+后台入口：
+  https://服务器IP:2443/login
+
+后台账号：
+  admin
+
+后台密码：
+  你安装时交互输入的 ADMIN_PASSWORD
+
+Wiki 访问：
+  在后台创建/配置 Wiki 后，访问对应域名或端口，例如 http://服务器IP:8011/
+EOF
+}
+
+start() {
+  require_project
+  check_docker_access
+  ensure_env
+  log "启动服务..."
+  compose up -d
+  status
+}
+
+stop() {
+  require_project
+  check_docker_access
+  log "停止服务..."
+  compose stop
+}
+
+restart() {
+  require_project
+  check_docker_access
+  log "重启服务..."
+  compose restart
+  status
+}
+
+status() {
+  require_project
+  check_docker_access
+  log "服务状态："
+  compose ps
+}
+
+logs() {
+  require_project
+  check_docker_access
+  local service="${1:-}"
+  if [[ -n "$service" ]]; then
+    compose logs -f --tail=200 "$service"
+  else
+    compose logs -f --tail=200
+  fi
+}
+
+config() {
+  require_project
+  if [[ -f "$ENV_FILE" ]]; then
+    warn "即将重新生成 .env。已有数据的生产环境不建议随意更换数据库/S3/NATS/Qdrant 密码。"
+    read -r -p "确认继续？输入 yes 继续：" answer
+    if [[ "$answer" != "yes" ]]; then
+      log "已取消。"
+      return 0
+    fi
+  fi
+  bash "$SETUP_SCRIPT" --no-start
+}
+
+update() {
+  require_project
+  check_docker_access
+  ensure_env
+  if [[ -d "$ROOT_DIR/.git" ]]; then
+    warn "将对当前分支执行 git pull --ff-only，然后重新构建启动。"
+    read -r -p "是否先拉取最新代码？输入 y 拉取，其他键跳过：" answer
+    if [[ "$answer" =~ ^([yY]|yes|YES)$ ]]; then
+      (cd "$ROOT_DIR" && git pull --ff-only)
+    fi
+  fi
+  log "重新构建并启动服务..."
+  compose up -d --build
+  status
+}
+
+uninstall() {
+  require_project
+  check_docker_access
+  warn "将停止并删除容器，但默认保留数据卷。"
+  read -r -p "确认卸载容器？输入 yes 继续：" answer
+  if [[ "$answer" != "yes" ]]; then
+    log "已取消。"
+    return 0
+  fi
+  compose down
+  read -r -p "是否同时删除数据卷？这会清空数据库/文件/向量数据。输入 DELETE 确认：" del
+  if [[ "$del" == "DELETE" ]]; then
+    compose down -v
+    log "已删除容器和数据卷。"
+  else
+    log "已删除容器，数据卷已保留。"
+  fi
+}
+
+menu() {
+  while true; do
+    cat <<'EOF'
+
+====== PandaWiki 二开版部署管理 ======
+1) 安装/构建并启动
+2) 查看服务状态
+3) 查看日志
+4) 重启服务
+5) 停止服务
+6) 重新生成生产配置 .env
+7) 更新代码并重建
+8) 卸载
+0) 退出
+====================================
+EOF
+    read -r -p "请选择：" choice
+    case "$choice" in
+      1) install ;;
+      2) status ;;
+      3)
+        read -r -p "服务名，可留空查看全部日志：" svc
+        logs "$svc"
+        ;;
+      4) restart ;;
+      5) stop ;;
+      6) config ;;
+      7) update ;;
+      8) uninstall ;;
+      0) exit 0 ;;
+      *) warn "无效选择。" ;;
+    esac
+  done
+}
+
+main() {
+  require_project
+  case "${1:-menu}" in
+    install|up) install ;;
+    start) start ;;
+    stop) stop ;;
+    restart) restart ;;
+    status|ps) status ;;
+    logs) shift || true; logs "${1:-}" ;;
+    update) update ;;
+    config|configure) config ;;
+    uninstall|remove) uninstall ;;
+    help|-h|--help) usage ;;
+    menu|"") menu ;;
+    *)
+      err "未知命令：${1:-}"
+      usage
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"

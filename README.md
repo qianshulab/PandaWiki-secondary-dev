@@ -35,15 +35,21 @@ PandaWiki 是一款 AI 大模型驱动的**开源知识库搭建系统**，帮�
 
 你需要一台支持 Docker 20.x 以上版本的 Linux 系统来安装 PandaWiki。
 
-使用 root 权限登录你的服务器，然后执行以下命令。
+本二开版本提供了与原版安装管理器类似的本地 `manager.sh`。把当前项目文件上传/拉取到服务器后，在项目根目录执行：
 
 ```bash
-bash -c "$(curl -fsSLk https://release.baizhi.cloud/panda-wiki/manager.sh)"
+bash manager.sh
 ```
 
-根据命令提示的选项进行安装，命令执行过程将会持续几分钟，请耐心等待。
+也可以直接执行安装命令：
 
-> 关于安装与部署的更多细节请参考 [安装 PandaWiki](https://pandawiki.docs.baizhi.cloud/node/01971602-bb4e-7c90-99df-6d3c38cfd6d5)。
+```bash
+bash manager.sh install
+```
+
+首次安装会交互式要求你输入并确认后台密码、数据库密码、对象存储密码等生产配置；配置会写入 `deploy/production/.env`。根据命令提示的选项进行安装，构建和启动过程将会持续几分钟，请耐心等待。
+
+> 关于本二开版本安装与部署的更多细节请参考 [生产 Docker 部署说明](docs/PRODUCTION_DOCKER_DEPLOYMENT.md)。
 
 ### 登录 PandaWiki
 

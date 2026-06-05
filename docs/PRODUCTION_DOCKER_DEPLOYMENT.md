@@ -13,6 +13,40 @@
 
 ## 2. 一键启动
 
+### 2.0 原版风格部署管理入口
+
+本二开版本已提供类似原版 `manager.sh` 的本地部署管理脚本。把项目文件放到服务器后，在项目根目录执行：
+
+```bash
+bash manager.sh
+```
+
+常用命令：
+
+```bash
+# 初始化配置并构建启动
+bash manager.sh install
+
+# 查看状态
+bash manager.sh status
+
+# 查看日志
+bash manager.sh logs
+bash manager.sh logs pandawiki-api
+
+# 重启/停止
+bash manager.sh restart
+bash manager.sh stop
+
+# 更新当前分支代码并重建
+bash manager.sh update
+
+# 卸载，可选择是否删除数据卷
+bash manager.sh uninstall
+```
+
+首次执行 `install` 时，如果 `deploy/production/.env` 不存在，会自动调用交互式配置脚本，要求用户输入并二次确认生产密码。
+
 ### 2.1 推荐：交互式生成生产配置
 
 Windows / PowerShell：
