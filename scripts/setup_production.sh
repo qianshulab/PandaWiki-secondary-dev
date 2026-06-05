@@ -147,6 +147,69 @@ read_optional_secret() {
   done
 }
 
+install_compose_plugin() {
+  if docker compose version >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ "$(id -u)" != "0" ]]; then
+    echo "未检测到 Docker Compose v2，且当前不是 root，无法自动安装 Compose 插件。" >&2
+    echo "请使用 root 执行，或手动安装后重试：docker compose version" >&2
+    return 1
+  fi
+
+  local raw_arch arch plugin_dir target tmp urls url
+  raw_arch="$(uname -m)"
+  case "$raw_arch" in
+    x86_64|amd64) arch="x86_64" ;;
+    aarch64|arm64|armv8l) arch="aarch64" ;;
+    armv7l|armhf) arch="armv7" ;;
+    *)
+      echo "当前架构不支持自动安装 Docker Compose plugin：$raw_arch" >&2
+      return 1
+      ;;
+  esac
+
+  plugin_dir="/usr/local/lib/docker/cli-plugins"
+  target="$plugin_dir/docker-compose"
+  tmp="/tmp/pandawiki-docker-compose-plugin.$$"
+
+  mkdir -p "$plugin_dir"
+
+  urls=(
+    "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$arch"
+    "https://mirrors.aliyun.com/docker-ce/linux/static/stable/$arch/docker-compose-linux-$arch"
+    "https://mirrors.cloud.tencent.com/docker-ce/linux/static/stable/$arch/docker-compose-linux-$arch"
+  )
+
+  echo "未检测到 Docker Compose v2，正在自动安装 Compose plugin..." >&2
+  for url in "${urls[@]}"; do
+    echo "尝试下载：$url" >&2
+    rm -f "$tmp"
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSLk --connect-timeout 15 --retry 2 -o "$tmp" "$url" || true
+    elif command -v wget >/dev/null 2>&1; then
+      wget --no-check-certificate -q -O "$tmp" "$url" || true
+    else
+      echo "未检测到 curl 或 wget，无法自动下载 Docker Compose plugin。" >&2
+      return 1
+    fi
+
+    if [[ -s "$tmp" ]]; then
+      install -m 0755 "$tmp" "$target"
+      rm -f "$tmp"
+      if docker compose version >/dev/null 2>&1; then
+        echo "Docker Compose v2 安装完成：$(docker compose version)" >&2
+        return 0
+      fi
+    fi
+  done
+
+  rm -f "$tmp"
+  echo "无法自动下载或启用 Docker Compose plugin。" >&2
+  return 1
+}
+
 find_compose() {
   if ! command -v docker >/dev/null 2>&1; then
     echo "未检测到 docker，请先安装 Docker Engine。" >&2
@@ -169,42 +232,29 @@ find_compose() {
       echo "docker-compose"
       return 0
     fi
-    cat >&2 <<EOF
-检测到旧版 docker-compose：${legacy_version:-unknown}。
-本生产部署默认要求 Docker Compose v2（docker compose）。
-
-Ubuntu / Debian:
-  sudo apt-get update
-  sudo apt-get install -y docker-compose-plugin
-  docker compose version
-
-CentOS / RHEL / Rocky / AlmaLinux:
-  sudo yum install -y docker-compose-plugin
-  docker compose version
-
-如果仓库没有 docker-compose-plugin：
-  curl -fsSL https://get.docker.com | sudo sh
-  sudo systemctl enable --now docker
-  docker compose version
-
-临时兼容旧版 docker-compose（不推荐）：
-  PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 bash manager.sh install
-EOF
-    return 1
+    echo "检测到旧版 docker-compose：${legacy_version:-unknown}，将按官方安装器风格自动安装 Docker Compose v2 插件。" >&2
   fi
 
-  cat >&2 <<'EOF'
-未检测到 Docker Compose v2（docker compose）。
+  install_compose_plugin || return 1
+  echo "docker compose"
+  return 0
+}
 
-Ubuntu / Debian:
-  sudo apt-get update
-  sudo apt-get install -y docker-compose-plugin
-  docker compose version
-
-CentOS / RHEL / Rocky / AlmaLinux:
-  sudo yum install -y docker-compose-plugin
-  docker compose version
-EOF
+should_start() {
+  local answer
+  case "$START_MODE" in
+    start)
+      return 0
+      ;;
+    no-start)
+      return 1
+      ;;
+    ask)
+      read -r -p "是否现在构建并启动生产服务？输入 y 启动，其他键跳过：" answer
+      [[ "$answer" =~ ^([yY]|yes|YES)$ ]]
+      return $?
+      ;;
+  esac
   return 1
 }
 
@@ -262,29 +312,17 @@ echo "已生成生产配置：$ENV_PATH"
 echo "后台账号：admin"
 echo "后台密码：$ADMIN_PASSWORD"
 
-if ! COMPOSE_CMD="$(find_compose)"; then
-  echo "配置文件已生成；安装 Docker/Compose 后可手动执行：cd deploy/production && docker compose up -d --build" >&2
-  exit 1
-fi
-echo "Docker Compose：$COMPOSE_CMD"
-
 SHOULD_START="false"
-case "$START_MODE" in
-  start)
-    SHOULD_START="true"
-    ;;
-  no-start)
-    SHOULD_START="false"
-    ;;
-  ask)
-    read -r -p "是否现在构建并启动生产服务？输入 y 启动，其他键跳过：" answer
-    if [[ "$answer" =~ ^([yY]|yes|YES)$ ]]; then
-      SHOULD_START="true"
-    fi
-    ;;
-esac
+if should_start; then
+  SHOULD_START="true"
+fi
 
 if [[ "$SHOULD_START" == "true" ]]; then
+  if ! COMPOSE_CMD="$(find_compose)"; then
+    echo "配置文件已生成；安装 Docker/Compose 后可手动执行：cd deploy/production && docker compose up -d --build" >&2
+    exit 1
+  fi
+  echo "Docker Compose：$COMPOSE_CMD"
   echo "开始构建并启动生产服务..."
   (cd "$DEPLOY_DIR" && $COMPOSE_CMD up -d --build)
   echo

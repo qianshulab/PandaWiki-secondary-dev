@@ -267,15 +267,6 @@ Write-Host "已生成生产配置：$envPath" -ForegroundColor Green
 Write-Host "后台账号：admin" -ForegroundColor Green
 Write-Host "后台密码：$adminPassword" -ForegroundColor Green
 
-try {
-  $compose = Find-ComposeCommand
-  Write-Host "Docker Compose：$($compose.Exe) $($compose.Args -join ' ')" -ForegroundColor Green
-} catch {
-  Write-Host $_.Exception.Message -ForegroundColor Red
-  Write-Host "配置文件已生成；安装 Docker/Compose 后可手动执行：cd deploy/production && docker compose up -d --build" -ForegroundColor Yellow
-  exit 1
-}
-
 $shouldStart = $false
 if ($Start) {
   $shouldStart = $true
@@ -287,6 +278,15 @@ if ($Start) {
 }
 
 if ($shouldStart) {
+  try {
+    $compose = Find-ComposeCommand
+    Write-Host "Docker Compose：$($compose.Exe) $($compose.Args -join ' ')" -ForegroundColor Green
+  } catch {
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    Write-Host "配置文件已生成；安装 Docker/Compose 后可手动执行：cd deploy/production && docker compose up -d --build" -ForegroundColor Yellow
+    exit 1
+  }
+
   Write-Host "开始构建并启动生产服务..." -ForegroundColor Cyan
   Invoke-Compose $compose @("up", "-d", "--build") $deployDir
   Write-Host ""

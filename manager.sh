@@ -82,50 +82,96 @@ compose_cmd() {
       printf 'docker-compose'
       return 0
     fi
-    err "检测到旧版 docker-compose：${legacy_version:-unknown}。本生产部署默认要求 Docker Compose v2（docker compose）。"
-    cat >&2 <<'EOF'
+    warn "检测到旧版 docker-compose：${legacy_version:-unknown}，将按官方安装器风格自动安装 Docker Compose v2 插件。"
+  fi
 
-请先安装 Docker Compose v2 插件，然后重新执行：
+  install_compose_plugin
 
-Ubuntu / Debian:
-  sudo apt-get update
-  sudo apt-get install -y docker-compose-plugin
-  docker compose version
+  if docker compose version >/dev/null 2>&1; then
+    printf 'docker compose'
+    return 0
+  fi
 
-CentOS / RHEL / Rocky / AlmaLinux:
-  sudo yum install -y docker-compose-plugin
-  docker compose version
+  err "Docker Compose v2 自动安装失败。"
+  cat >&2 <<'EOF'
 
-如果你的发行版仓库没有 docker-compose-plugin，可使用 Docker 官方源或 Docker 官方安装脚本重新安装 Docker Engine：
-  curl -fsSL https://get.docker.com | sudo sh
-  sudo systemctl enable --now docker
+请手动安装 Docker Compose v2 插件后重试：
+  curl -fsSL https://get.docker.com | sh
+  systemctl enable --now docker
   docker compose version
 
 临时兼容旧版 docker-compose（不推荐，仅用于已验证环境）：
   PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 bash manager.sh install
 EOF
+  exit 1
+}
+
+install_compose_plugin() {
+  if docker compose version >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ "$(id -u)" != "0" ]]; then
+    err "未检测到 Docker Compose v2，且当前不是 root，无法自动安装 Compose 插件。"
+    cat >&2 <<'EOF'
+
+请使用 root 运行，或手动安装后重试：
+  sudo bash manager.sh install
+  docker compose version
+
+EOF
     exit 1
   fi
 
-  err "未检测到 Docker Compose v2（docker compose）。"
-  cat >&2 <<'EOF'
+  local raw_arch arch plugin_dir target tmp urls url
+  raw_arch="$(uname -m)"
+  case "$raw_arch" in
+    x86_64|amd64) arch="x86_64" ;;
+    aarch64|arm64|armv8l) arch="aarch64" ;;
+    armv7l|armhf) arch="armv7" ;;
+    *)
+      err "当前架构不支持自动安装 Docker Compose plugin：$raw_arch"
+      exit 1
+      ;;
+  esac
 
-请安装 Docker Compose v2 插件：
+  plugin_dir="/usr/local/lib/docker/cli-plugins"
+  target="$plugin_dir/docker-compose"
+  tmp="/tmp/pandawiki-docker-compose-plugin.$$"
 
-Ubuntu / Debian:
-  sudo apt-get update
-  sudo apt-get install -y docker-compose-plugin
-  docker compose version
+  mkdir -p "$plugin_dir"
 
-CentOS / RHEL / Rocky / AlmaLinux:
-  sudo yum install -y docker-compose-plugin
-  docker compose version
+  urls=(
+    "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$arch"
+    "https://mirrors.aliyun.com/docker-ce/linux/static/stable/$arch/docker-compose-linux-$arch"
+    "https://mirrors.cloud.tencent.com/docker-ce/linux/static/stable/$arch/docker-compose-linux-$arch"
+  )
 
-如果你的发行版仓库没有 docker-compose-plugin：
-  curl -fsSL https://get.docker.com | sudo sh
-  sudo systemctl enable --now docker
-  docker compose version
-EOF
+  log "未检测到 Docker Compose v2，正在自动安装 Compose plugin..."
+  for url in "${urls[@]}"; do
+    warn "尝试下载：$url"
+    rm -f "$tmp"
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSLk --connect-timeout 15 --retry 2 -o "$tmp" "$url" || true
+    elif command -v wget >/dev/null 2>&1; then
+      wget --no-check-certificate -q -O "$tmp" "$url" || true
+    else
+      err "未检测到 curl 或 wget，无法自动下载 Docker Compose plugin。"
+      exit 1
+    fi
+
+    if [[ -s "$tmp" ]]; then
+      install -m 0755 "$tmp" "$target"
+      rm -f "$tmp"
+      if docker compose version >/dev/null 2>&1; then
+        log "Docker Compose v2 安装完成：$(docker compose version)"
+        return 0
+      fi
+    fi
+  done
+
+  rm -f "$tmp"
+  err "无法自动下载或启用 Docker Compose plugin。"
   exit 1
 }
 

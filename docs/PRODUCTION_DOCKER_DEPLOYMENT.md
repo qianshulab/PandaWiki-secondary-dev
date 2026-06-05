@@ -11,38 +11,21 @@
 - `web/admin/Dockerfile`
 - `web/admin/server.conf`
 
-## 1.1 Docker Compose 要求
+## 1.1 Docker Compose 兼容策略
 
-生产部署默认要求 Docker Compose v2，也就是命令：
+生产部署优先使用 Docker Compose v2，也就是命令：
 
 ```bash
 docker compose version
 ```
 
-如果服务器只有旧版 `docker-compose`（Compose v1），请先安装 v2 插件：
+为保持与官方安装器行为一致，如果服务器缺少 `docker compose`，`manager.sh` 会在 root 环境下自动下载并安装 Docker Compose v2 CLI plugin 到：
 
 ```bash
-# Ubuntu / Debian
-sudo apt-get update
-sudo apt-get install -y docker-compose-plugin
-docker compose version
+/usr/local/lib/docker/cli-plugins/docker-compose
 ```
 
-```bash
-# CentOS / RHEL / Rocky / AlmaLinux
-sudo yum install -y docker-compose-plugin
-docker compose version
-```
-
-如果系统仓库没有 `docker-compose-plugin`，可以使用 Docker 官方安装脚本重新安装 Docker Engine：
-
-```bash
-curl -fsSL https://get.docker.com | sudo sh
-sudo systemctl enable --now docker
-docker compose version
-```
-
-临时兼容旧版 `docker-compose` 的方式如下，但生产环境不推荐：
+如果自动安装失败，可手动安装 Docker Compose v2 后重试；临时兼容旧版 `docker-compose` 的方式如下，但生产环境不推荐：
 
 ```bash
 PANDAWIKI_ALLOW_LEGACY_COMPOSE=1 bash manager.sh install
