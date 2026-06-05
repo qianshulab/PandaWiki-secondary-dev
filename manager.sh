@@ -78,10 +78,39 @@ compose_cmd() {
 }
 
 check_docker_access() {
-  if ! docker info >/dev/null 2>&1; then
-    err "当前用户无法访问 Docker。请使用 root、加入 docker 用户组，或确认 Docker 服务已启动。"
-    exit 1
+  if docker info >/dev/null 2>&1; then
+    return 0
   fi
+
+  local info_output
+  info_output="$(docker info 2>&1 || true)"
+  err "当前用户无法访问 Docker。"
+  printf '%s\n' "$info_output" >&2
+  cat >&2 <<'EOF'
+
+请按你的环境处理：
+  1) 原版推荐方式：使用 root 执行
+       sudo bash manager.sh install
+
+  2) Linux 非 root 用户：确认 Docker 已启动，并把当前用户加入 docker 组
+       sudo systemctl enable --now docker
+       sudo usermod -aG docker "$USER"
+       newgrp docker
+       docker info
+
+  3) WSL + Docker Desktop：
+       - 确认 Docker Desktop 已启动
+       - Docker Desktop -> Settings -> Resources -> WSL Integration
+       - 启用当前发行版的集成后重开终端
+       - 再执行 docker info
+
+  4) 快速定位：
+       id
+       groups
+       ls -l /var/run/docker.sock
+       systemctl status docker --no-pager
+EOF
+  exit 1
 }
 
 compose() {
