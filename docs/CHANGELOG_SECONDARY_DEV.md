@@ -1,19 +1,6 @@
 # PandaWiki 二开版本迭代记录
 
 
-## 2026-06-05 - 公网边缘加速问答容错
-
-### 变更内容
-
-- 前台 Wiki 问答弹窗和网页挂件增加会话身份容错：只有 `conversation_id` 与 `nonce` 同时存在才续接历史会话。
-- 当公网 CDN / EdgeOne / WAF 中断 SSE，导致前端只拿到 `conversation_id` 但未拿到 `nonce` 时，自动清理不完整会话身份并新开会话，避免后续连续报 `nonce is required`。
-- 默认问题、热门问题、搜索唤起等新问题入口统一清理旧会话身份，避免新会话误复用旧 `conversation_id`。
-- 补充生产部署和绿联 NAS 部署文档中的腾讯 EdgeOne / CDN / WAF 动态 SSE 放行配置说明。
-
-### 验收命令
-
-- `cd web/app && pnpm build`
-
 ## 2026-06-05 - Wiki 默认问题触发问答修复
 
 ### 变更内容
