@@ -48,6 +48,21 @@ export type FeaturePolicyFlag =
   | 'allow_contribution'
   | 'allow_visitor_permission_control';
 
+const SECONDARY_DEVELOPMENT_UNLOCKED_FLAGS: FeaturePolicyFlag[] = [
+  'allow_admin_perm',
+  'allow_custom_copyright',
+  'allow_comment_audit',
+  'allow_advanced_bot',
+  'allow_watermark',
+  'allow_copy_protection',
+  'allow_open_ai_bot_settings',
+  'allow_mcp_server',
+  'allow_node_stats',
+  'allow_doc_history',
+  'allow_contribution',
+  'allow_visitor_permission_control',
+];
+
 export const licensePolicyFlagEnabled = (
   license: any,
   flag: FeaturePolicyFlag,
@@ -56,6 +71,12 @@ export const licensePolicyFlagEnabled = (
   const policyValue = license?.limitation?.[flag];
   if (typeof policyValue === 'boolean') return policyValue;
   const edition = license?.edition ?? ConstsLicenseEdition.LicenseEditionFree;
+  if (
+    edition === ConstsLicenseEdition.LicenseEditionProfession &&
+    SECONDARY_DEVELOPMENT_UNLOCKED_FLAGS.includes(flag)
+  ) {
+    return true;
+  }
   return fallbackPermission.includes(edition);
 };
 

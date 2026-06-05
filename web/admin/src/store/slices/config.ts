@@ -1,6 +1,7 @@
 import { KnowledgeBaseListItem } from '@/api';
 import { DomainLicenseResp } from '@/request/pro/types';
 import {
+  ConstsLicenseEdition,
   DomainAppDetailResp,
   DomainKnowledgeBaseDetail,
   GithubComChaitinPandaWikiDomainModelListItem,
@@ -31,8 +32,26 @@ const initialState: config = {
     created_at: '',
   },
   license: {
-    edition: 0,
+    edition: ConstsLicenseEdition.LicenseEditionProfession,
     expired_at: 0,
+    limitation: {
+      allow_admin_perm: true,
+      allow_advanced_bot: true,
+      allow_comment_audit: true,
+      allow_contribution: true,
+      allow_copy_protection: true,
+      allow_custom_copyright: true,
+      allow_doc_history: true,
+      allow_mcp_server: true,
+      allow_node_stats: true,
+      allow_open_ai_bot_settings: true,
+      allow_visitor_permission_control: true,
+      allow_watermark: true,
+      max_admin: 20,
+      max_kb: 10,
+      max_node: 10000,
+      max_sso_users: 0,
+    },
     started_at: 0,
   },
   kb_id: '',

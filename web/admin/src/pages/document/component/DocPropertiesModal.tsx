@@ -55,26 +55,6 @@ const StyledText = styled('div')(({ theme }) => ({
   fontSize: 16,
 }));
 
-const PER_OPTIONS = [
-  {
-    label: '完全开放',
-    value: ConstsNodeAccessPerm.NodeAccessPermOpen,
-  },
-  {
-    label: (
-      <Stack direction={'row'} alignItems={'center'}>
-        <span>部分开放</span>
-        <VersionCanUse permission={BUSINESS_VERSION_PERMISSION} />
-      </Stack>
-    ),
-    value: ConstsNodeAccessPerm.NodeAccessPermPartial,
-  },
-  {
-    label: '完全禁止',
-    value: ConstsNodeAccessPerm.NodeAccessPermClosed,
-  },
-];
-
 const DocPropertiesModal = ({
   open,
   onCancel,
@@ -86,6 +66,30 @@ const DocPropertiesModal = ({
   const allowVisitorPermissionControl = useLicensePolicyFlag(
     'allow_visitor_permission_control',
     BUSINESS_VERSION_PERMISSION,
+  );
+  const permissionOptions = useMemo(
+    () => [
+      {
+        label: '完全开放',
+        value: ConstsNodeAccessPerm.NodeAccessPermOpen,
+      },
+      {
+        label: (
+          <Stack direction={'row'} alignItems={'center'}>
+            <span>部分开放</span>
+            {!allowVisitorPermissionControl && (
+              <VersionCanUse permission={BUSINESS_VERSION_PERMISSION} />
+            )}
+          </Stack>
+        ),
+        value: ConstsNodeAccessPerm.NodeAccessPermPartial,
+      },
+      {
+        label: '完全禁止',
+        value: ConstsNodeAccessPerm.NodeAccessPermClosed,
+      },
+    ],
+    [allowVisitorPermissionControl],
   );
   const [loading, setLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -346,7 +350,7 @@ const DocPropertiesModal = ({
             control={control}
             render={({ field }) => (
               <RadioGroup row {...field} sx={{ gap: 2 }}>
-                {PER_OPTIONS.map(option => (
+                {permissionOptions.map(option => (
                   <FormControlLabel
                     key={option.value}
                     value={option.value}
@@ -396,7 +400,7 @@ const DocPropertiesModal = ({
             control={control}
             render={({ field }) => (
               <RadioGroup row {...field} sx={{ gap: 2 }}>
-                {PER_OPTIONS.map(option => (
+                {permissionOptions.map(option => (
                   <FormControlLabel
                     key={option.value}
                     value={option.value}
@@ -446,7 +450,7 @@ const DocPropertiesModal = ({
             control={control}
             render={({ field }) => (
               <RadioGroup row {...field} sx={{ gap: 2 }}>
-                {PER_OPTIONS.map(option => (
+                {permissionOptions.map(option => (
                   <FormControlLabel
                     key={option.value}
                     value={option.value}
