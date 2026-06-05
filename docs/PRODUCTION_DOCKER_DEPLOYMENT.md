@@ -1,309 +1,170 @@
-# PandaWiki 生产级 Docker 部署（无 fake 依赖）
+# PandaWiki 二开版生产部署说明（官方手动部署流程对齐）
 
 更新时间：2026-06-05 Asia/Shanghai
 
-本部署方案不再使用 `fake_caddy` / `fake_rag`，仅保留真实服务链路（PostgreSQL、Redis、NATS、MinIO、Qdrant、RAGLite、Anydoc Crawler、PandaWiki API、Consumer、Caddy、Admin、App）。
+本部署只允许一个部署差异：官方应用镜像改为当前二开源码本地构建。除二开应用服务构建来源外，生产 `docker-compose.yml` 的服务拓扑、容器名、网络、数据目录、环境变量字段均按官方手动部署 compose 对齐。
 
-## 1. 目录
+## 1. 环境要求
 
-- `deploy/production/docker-compose.yml`
-- `deploy/production/Caddyfile`
-- `web/admin/Dockerfile`
-- `web/admin/server.conf`
+与官方安装文档一致：
 
-## 1.1 Docker Compose 兼容策略
+- 操作系统：Linux
+- CPU 架构：`x86_64` / `aarch64`
+- Docker：`20.10.14+`
+- Docker Compose：`2.0.0+`
+- 推荐配置：2 核 CPU / 4 GB 内存 / 40 GB 磁盘
 
-与官方安装入口保持一致：
-
-- 使用 root 执行安装管理器；
-- 支持 amd64/x86_64 与 arm64/aarch64 架构；
-- 使用 Docker Compose v2+。
-
-生产部署优先使用 Docker Compose v2，也就是命令：
+检查命令：
 
 ```bash
+docker version
 docker compose version
 ```
 
-如果服务器没有 `docker compose`，但已有 `docker-compose` 且版本号为 2 或更高，也会继续使用该命令。例如 `docker-compose version --short` 输出 `5.1.4` 时会被视为可用。
+如果没有 `docker compose`，但有 `docker-compose` 且版本号为 `2.0.0+`，部署脚本也会使用该命令。
 
-如果 Compose 版本低于 2，或两个命令都不存在，请先按官方环境要求安装 Docker Compose v2+ 后重试。
+## 2. 和官方手动安装流程的对应关系
 
-## 2. 一键启动
+官方手动安装流程是：
 
-### 2.0 原版风格部署管理入口
+1. 创建安装目录；
+2. 下载官方 `docker-compose.yml`；
+3. 创建 `.env`；
+4. 执行 `docker compose up -d`。
 
-本二开版本已提供类似原版 `manager.sh` 的本地部署管理脚本。把项目文件放到服务器后，在项目根目录执行：
+本二开版本对应为：
 
-```bash
-bash manager.sh
-```
+1. 拉取/上传当前二开项目目录；
+2. 使用项目内 `deploy/production/docker-compose.yml`；
+3. 首次安装自动生成 `deploy/production/.env`；
+4. 执行 `docker compose up -d --build`，其中 `--build` 是为了构建当前二开源码。
 
-生产服务器建议按官方方式使用 root 执行：
+## 3. 一键安装
+
+在项目根目录执行：
 
 ```bash
 sudo bash manager.sh install
 ```
 
-常用命令：
+安装完成后输出格式与官方一致：
+
+```text
+SUCCESS  控制台信息:
+SUCCESS    访问地址(内网): https://服务器IP:2443
+SUCCESS    访问地址(外网): https://服务器IP:2443
+SUCCESS    用户名: admin
+SUCCESS    密码: 自动生成的 ADMIN_PASSWORD
+```
+
+## 4. `.env` 字段
+
+首次安装会生成：
+
+```text
+TIMEZONE=Asia/Shanghai
+SUBNET_PREFIX=169.254.15
+POSTGRES_PASSWORD=<随机密码>
+NATS_PASSWORD=<随机密码>
+JWT_SECRET=<随机密码>
+S3_SECRET_KEY=<随机密码>
+QDRANT_API_KEY=<随机密码>
+REDIS_PASSWORD=<随机密码>
+ADMIN_PASSWORD=<随机密码>
+ADMIN_PORT=2443
+```
+
+如果你之前运行过旧部署脚本，`manager.sh install` 会检测既有 `.env` 是否缺少上述官方字段；如缺失，会先备份原文件为 `.env.bak.<时间戳>`，再只补齐缺失字段，不覆盖已有密码。
+
+这些字段与官方手动安装说明保持一致。后台管理员账号固定为：
+
+```text
+admin
+```
+
+后台密码为 `.env` 中的：
+
+```text
+ADMIN_PASSWORD
+```
+
+## 5. 服务拓扑
+
+服务名和容器名保持官方命名：
+
+| Compose 服务 | 容器名 | 来源 |
+| --- | --- | --- |
+| `caddy` | `panda-wiki-caddy` | 官方镜像 |
+| `nginx` | `panda-wiki-nginx` | 当前二开源码 `web/admin` 构建 |
+| `app` | `panda-wiki-app` | 当前二开源码 `web/app` 构建 |
+| `api` | `panda-wiki-api` | 当前二开源码 `backend` 构建 |
+| `consumer` | `panda-wiki-consumer` | 当前二开源码 `backend` 构建 |
+| `postgres` | `panda-wiki-postgres` | 官方镜像 |
+| `redis` | `panda-wiki-redis` | 官方镜像 |
+| `minio` | `panda-wiki-minio` | 官方镜像 |
+| `nats` | `panda-wiki-nats` | 官方镜像 |
+| `qdrant` | `panda-wiki-qdrant` | 官方镜像 |
+| `crawler` | `panda-wiki-crawler` | 官方镜像 |
+| `raglite` | `panda-wiki-raglite` | 官方镜像 |
+
+数据目录与官方一致，位于：
+
+```text
+deploy/production/data/
+```
+
+## 6. 常用命令
 
 ```bash
-# 初始化配置并构建启动
-bash manager.sh install
-
 # 查看状态
-bash manager.sh status
+sudo bash manager.sh status
 
 # 查看日志
-bash manager.sh logs
-bash manager.sh logs pandawiki-api
+sudo bash manager.sh logs
+sudo bash manager.sh logs api
+sudo bash manager.sh logs nginx
 
 # 重启/停止
-bash manager.sh restart
-bash manager.sh stop
+sudo bash manager.sh restart
+sudo bash manager.sh stop
 
-# 更新当前分支代码并重建
-bash manager.sh update
+# 更新当前分支并重建
+sudo bash manager.sh update
 
-# 卸载，可选择是否删除数据卷
-bash manager.sh uninstall
+# 卸载，默认保留数据目录
+sudo bash manager.sh uninstall
 ```
 
-首次执行 `install` 时，如果 `deploy/production/.env` 不存在，会按原版安装器风格自动生成生产密码/密钥，并在安装完成后输出后台 `admin` 密码。
-
-如需手动指定密码，可单独执行：
+也可以直接进入生产目录执行官方风格命令：
 
 ```bash
-bash manager.sh config
+cd deploy/production
+docker compose ps
+docker compose logs -f api
+docker compose restart api
+docker compose down
 ```
 
-### 2.1 可选：单独生成生产配置
-
-Windows / PowerShell：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Auto -NoStart
-```
-
-Linux / macOS / WSL：
+## 7. 验收检查
 
 ```bash
-bash scripts/setup_production.sh --auto --no-start
+cd deploy/production
+docker compose ps
+curl -k https://127.0.0.1:${ADMIN_PORT:-2443}
+docker logs panda-wiki-api --tail=100
 ```
 
-默认原版风格会自动生成以下生产密码/密钥：
-
-- `ADMIN_PASSWORD`
-- `POSTGRES_PASSWORD`
-- `NATS_PASSWORD`
-- `S3_SECRET_KEY` / `MINIO_ROOT_PASSWORD`
-- `QDRANT_API_KEY`
-- `JWT_SECRET`
-
-脚本会生成 `deploy/production/.env`。如果该文件已存在，会先自动备份为 `.env.bak.<时间戳>`。
-
-如确实需要手动指定密码，可使用交互式模式：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -NoStart
-```
-
-```bash
-bash scripts/setup_production.sh --no-start
-```
-
-如需生成配置后直接构建并启动：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup_production.ps1 -Auto -Start
-```
-
-```bash
-bash scripts/setup_production.sh --auto --start
-```
-
-### 2.2 手动启动
-
-```bash
-cd D:\AI WorkSpace\PandaWiki
-docker compose -f deploy/production/docker-compose.yml up -d --build
-```
-
-## 3. 服务端口与入口
-
-| 服务 | 外部端口 | 备注 |
-| --- | --- | --- |
-| Admin（控制台） | `https://127.0.0.1:2443/login` | 直接访问管理后台 |
-| API | `http://127.0.0.1:8000` | 后端接口与 MCP |
-| MCP | `http://127.0.0.1:8000/mcp` | 与文档一致 |
-| Caddy（Wiki 站点） | `http://127.0.0.1:80` | 由 KB 的 `access_settings.port`/`base_url` 决定路由 |
-| Caddy（自定义 Wiki 端口） | `http://127.0.0.1:8010-8099` | Windows/WSL 本地验收端口范围；创建 Wiki 时建议选择此范围内端口 |
-| MinIO API | `http://127.0.0.1:9000` | 文件存储 |
-| MinIO Console | `http://127.0.0.1:9001` | 可选管理 |
-| PostgreSQL | `127.0.0.1:5432` | 数据库 |
-| Redis | `127.0.0.1:6379` | 缓存/会话 |
-| NATS | `127.0.0.1:4222` | MQ |
-| Qdrant | 容器内网 `172.30.0.15:6334` | 向量库，RAGLite 使用 |
-| RAGLite | 容器内网 `172.30.0.18:5050` | RAG store，API 通过 `RAG_CT_RAG_BASE_URL` 调用 |
-| Anydoc Crawler | 容器内网 `172.30.0.17:8080` | URL/Sitemap/RSS/第三方文档导入 |
-
-管理员密码：
-
-- 通过 `bash manager.sh install` 或 `scripts/setup_production.* -Auto` 安装时会自动生成并输出；
-- 同时写入 `deploy/production/.env` 的 `ADMIN_PASSWORD`；
-- 不建议在生产环境直接依赖 compose 内置兜底默认值。
-
-可用环境变量覆盖（示例）：
+后台访问：
 
 ```text
-POSTGRES_PASSWORD
-NATS_PASSWORD
-S3_SECRET_KEY
-JWT_SECRET
-ADMIN_PASSWORD
-QDRANT_API_KEY
+https://服务器IP:2443
 ```
 
-## 4. 核心环境变量（已写死在 compose）
+前台 Wiki 访问方式与官方一致：在后台创建/配置 Wiki 站点后，按站点配置的域名或端口访问。
 
-- `SUBNET_PREFIX=172.30.0`
-  - 保证后端生成的 Caddy 上游地址与容器静态 IP 对齐：  
-    - API：`172.30.0.2:8000`  
-    - App：`172.30.0.112:3010`  
-    - MinIO：`172.30.0.12:9000`  
-    - NATS：`172.30.0.13:4222`
-    - Qdrant：`172.30.0.15:6334`
-    - Anydoc Crawler：`172.30.0.17:8080`
-    - RAGLite：`172.30.0.18:5050`
-- `RAG_CT_RAG_BASE_URL=http://172.30.0.18:5050`
-  - API/Consumer 同步模型、创建知识库 dataset、文档向量化、AI 搜索/问答均依赖此真实 RAGLite 地址。
-- `CADDY_API=/app/run/caddy-admin.sock`
-  - 挂载共享卷 `caddy-run`，API/Consumer 均可通过 socket 同步 KB 路由。
-  - 代码通过 Unix Socket 调用 Caddy Admin API 时使用 `Host: 127.0.0.1`，避免 Caddy 拒绝 `host not allowed: unix`。
-  - 动态下发 Caddy JSON 配置时保留 `admin.listen=unix//app/run/caddy-admin.sock`，避免 `/load` 后 Admin API 回落到 `localhost:2019` 导致后续同步失败。
-- `CADDY_ADMIN` 未对外暴露，仅由 API 内网写入。
+## 8. 注意事项
 
-## 5. 生产启动后的验收清单
-
-### 5.1 容器状态
-
-```bash
-docker compose -f deploy/production/docker-compose.yml ps
-```
-
-所有容器应显示 `Up`，并且数据库/缓存/MQ 健康检查通过。
-
-### 5.2 API 可用性
-
-```bash
-curl -fsS http://127.0.0.1:8000/healthz
-```
-
-### 5.3 RAGLite/RAG store 验证
-
-模型保存后，后台会把 embedding / rerank / analysis / chat 模型同步到 RAGLite：
-
-```bash
-docker logs pandawiki-prod-api 2>&1 | grep 'successfully updated RAG model'
-docker logs pandawiki-prod-raglite 2>&1 | grep '/api/v1/models/upsert'
-```
-
-成功时应看到 `POST /api/v1/models/upsert status=200`，不会再出现：
-
-```text
-failed to update model in RAG store: embedding
-dial tcp 172.30.0.18:5050: connect: no route to host
-```
-
-### 5.4 Admin 登录
-
-1. 打开 `https://127.0.0.1:2443/login`
-2. 使用 admin 帐号（`admin`）和 `ADMIN_PASSWORD` 登陆。
-3. Admin 容器现在会在 Docker 构建阶段执行 `pnpm --filter panda-wiki-admin build`，不再依赖本机残留的 `web/admin/dist`，避免出现后端已放开功能、前端仍显示旧“商业版可用”的问题。
-4. `index.html` / SPA 路由响应已设置 `Cache-Control: no-store`；静态 hashed assets 使用 `immutable`。升级后如果浏览器页面一直开着，仍建议执行一次完整刷新（Windows/Chrome：`Ctrl + F5`）或重新登录。
-
-### 5.5 Wiki 站点路由验证
-
-1. 在后台创建知识库（`访问设置 -> 主机地址/端口`）；
-2. 建议首次先设置：
-   - `domain`：`localhost`
-   - `端口`：`8010-8099` 范围内，例如 `8011`
-3. 保存并发布任意文档后，使用 `访问 Wiki 网站` 入口或直接访问：
-   - `http://127.0.0.1:8011`
-   - `/node/<doc_id>` / `/home`
-
-### 5.6 MCP 验证
-
-```bash
-curl -sS http://127.0.0.1:8000/mcp -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
-```
-
-（若服务为授权模式，需要携带 `X-KB-ID`、Token，或把 KB 设置为公开测试。）
-
-### 5.7 二开能力入口核验
-
-登录 Admin 后可按以下位置核验本轮二开能力：
-
-| 能力 | Admin 入口 |
-| --- | --- |
-| 自定义版权 / Footer | `设置 -> 门户网站 -> 定制 Footer`、`设置 -> 门户网站 -> 智能问答版权信息` |
-| 自定义 AI Prompt | `设置 -> 问答设置 -> 智能问答提示词` |
-| 高级机器人配置 | `设置 -> AI 机器人` |
-| OpenAI 兼容问答 API | `设置 -> AI 机器人 -> 问答机器人 API` |
-| MCP Server | `设置 -> MCP 设置` |
-| API Token | `设置 -> 访问控制 -> API Token` |
-| 页面水印 / 复制保护 | `设置 -> 安全设置` |
-
-当前生产容器验收结果：`安全设置` 页面已无“商业版可用”遮罩，水印与内容复制选项均可点击。
-
-## 6. 与旧 fake 链路的差异
-
-- `fake_caddy.py` / `fake_rag.py` 不再参与生产部署；
-- 真实 Wiki 访问由 Caddy 的 Unix Socket Admin API 动态同步；
-- 真实 RAG 由 RAGLite + Qdrant + MinIO + NATS 链路完成；
-- URL/Sitemap/RSS/第三方文档导入由 Anydoc Crawler 完成；
-- Admin 与 Wiki 分离端口（本配置为：Admin `2443`、Wiki `80`）；
-- 业务基础功能不改造，仅补齐部署链路。
-
-## 7. 常用维护命令
-
-```bash
-# 查看日志
-docker compose -f deploy/production/docker-compose.yml logs -f pandawiki-api
-docker compose -f deploy/production/docker-compose.yml logs -f pandawiki-raglite
-docker compose -f deploy/production/docker-compose.yml logs -f pandawiki-caddy
-
-# 重启某个服务
-docker compose -f deploy/production/docker-compose.yml restart pandawiki-api
-
-# 清理环境
-docker compose -f deploy/production/docker-compose.yml down -v
-```
-
-## 8. 本次 RAG store 报错修复记录
-
-### 现象
-
-配置好模型后切换/应用模型模式，接口返回：
-
-```text
-failed to update model in RAG store: embedding
-```
-
-API 日志中对应底层错误：
-
-```text
-Post "http://172.30.0.18:5050/api/v1/models/upsert": dial tcp 172.30.0.18:5050: connect: no route to host
-```
-
-### 根因
-
-生产 compose 里缺少真实 `raglite` / `qdrant` 服务，API 默认按 `SUBNET_PREFIX` 访问 `http://172.30.0.18:5050`，但该地址没有容器监听。
-
-### 修复
-
-- 新增 `pandawiki-raglite`：官方 RAG store；
-- 新增 `pandawiki-qdrant`：向量库；
-- 新增 `pandawiki-crawler`：生产导入链路；
-- 给 API/Consumer 显式配置 `RAG_CT_RAG_BASE_URL=http://172.30.0.18:5050`；
-- 删除 PandaWiki API 自行创建 `raglite.>` JetStream 的逻辑，避免和 RAGLite 官方 `raglite_tasks` / `raglite_events` stream 冲突。
+- 不要把 `deploy/production/.env` 提交到仓库；
+- 不要随意删除 `deploy/production/data/`，这是生产数据目录；
+- 如果修改 `.env` 中间件密码，通常需要同时清理旧数据或保持原有数据密码一致；
+- 生产部署不再使用本地验收用 fake 服务。

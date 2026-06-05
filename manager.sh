@@ -18,7 +18,7 @@ PandaWiki 二开版部署管理脚本
   bash manager.sh stop             # 停止服务
   bash manager.sh restart          # 重启服务
   bash manager.sh status           # 查看状态
-  bash manager.sh logs [service]   # 查看日志，例如：bash manager.sh logs pandawiki-api
+  bash manager.sh logs [service]   # 查看日志，例如：bash manager.sh logs api
   bash manager.sh update           # 拉取当前分支最新代码并重建启动
   bash manager.sh config           # 交互式重新生成 deploy/production/.env
   bash manager.sh config-auto      # 自动重新生成 deploy/production/.env
@@ -167,17 +167,78 @@ compose() {
 }
 
 ensure_env() {
-  if [[ -f "$ENV_FILE" ]]; then
+  if [[ ! -f "$ENV_FILE" ]]; then
+    warn "未发现生产配置 $ENV_FILE，将按原版风格自动生成生产密码/密钥。"
+    bash "$SETUP_SCRIPT" --auto --no-start
     return 0
   fi
-  warn "未发现生产配置 $ENV_FILE，将按原版风格自动生成生产密码/密钥。"
-  bash "$SETUP_SCRIPT" --auto --no-start
+  ensure_env_keys
 }
 
 env_value() {
   local key="$1"
   [[ -f "$ENV_FILE" ]] || return 0
   awk -F= -v k="$key" '$1 == k { sub(/^[^=]*=/, ""); print; exit }' "$ENV_FILE"
+}
+
+env_has_value() {
+  local key="$1" value
+  value="$(env_value "$key")"
+  [[ -n "$value" ]]
+}
+
+generate_secret() {
+  local length="${1:-32}"
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$length" <<'PY'
+import secrets
+import sys
+alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+print("".join(secrets.choice(alphabet) for _ in range(int(sys.argv[1]))))
+PY
+  else
+    local out=""
+    while (( ${#out} < length )); do
+      out="$out$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$length" || true)"
+    done
+    printf '%s\n' "${out:0:length}"
+  fi
+}
+
+ensure_env_keys() {
+  local backup_path missing=0
+  local keys=(
+    TIMEZONE SUBNET_PREFIX POSTGRES_PASSWORD NATS_PASSWORD QDRANT_API_KEY
+    JWT_SECRET S3_SECRET_KEY REDIS_PASSWORD ADMIN_PASSWORD ADMIN_PORT
+  )
+  for key in "${keys[@]}"; do
+    if ! env_has_value "$key"; then
+      missing=1
+      break
+    fi
+  done
+  if [[ "$missing" != "1" ]]; then
+    return 0
+  fi
+
+  backup_path="$ENV_FILE.bak.$(date +%Y%m%d-%H%M%S)"
+  cp "$ENV_FILE" "$backup_path"
+  warn "检测到 .env 缺少官方部署字段，已备份原文件：$backup_path"
+  {
+    printf '\n# Added by manager.sh to align with official manual deployment at %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')"
+    env_has_value TIMEZONE || printf 'TIMEZONE=Asia/Shanghai\n'
+    env_has_value SUBNET_PREFIX || printf 'SUBNET_PREFIX=169.254.15\n'
+    env_has_value POSTGRES_PASSWORD || printf 'POSTGRES_PASSWORD=%s\n' "$(generate_secret 32)"
+    env_has_value NATS_PASSWORD || printf 'NATS_PASSWORD=%s\n' "$(generate_secret 32)"
+    env_has_value QDRANT_API_KEY || printf 'QDRANT_API_KEY=%s\n' "$(generate_secret 32)"
+    env_has_value JWT_SECRET || printf 'JWT_SECRET=%s\n' "$(generate_secret 64)"
+    env_has_value S3_SECRET_KEY || printf 'S3_SECRET_KEY=%s\n' "$(generate_secret 32)"
+    env_has_value REDIS_PASSWORD || printf 'REDIS_PASSWORD=%s\n' "$(generate_secret 32)"
+    env_has_value ADMIN_PASSWORD || printf 'ADMIN_PASSWORD=%s\n' "$(generate_secret 24)"
+    env_has_value ADMIN_PORT || printf 'ADMIN_PORT=2443\n'
+  } >>"$ENV_FILE"
+  chmod 600 "$ENV_FILE" || true
+  log ".env 官方部署字段已补齐。"
 }
 
 detect_host_ip() {
@@ -203,7 +264,8 @@ print_success_info() {
   cat <<EOF
 
 SUCCESS  控制台信息:
-SUCCESS    访问地址: https://$ip:2443/login
+SUCCESS    访问地址(内网): https://$ip:2443
+SUCCESS    访问地址(外网): https://$ip:2443
 SUCCESS    用户名: admin
 SUCCESS    密码: ${admin_password:-请查看 deploy/production/.env 中的 ADMIN_PASSWORD}
 

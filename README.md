@@ -38,16 +38,16 @@ PandaWiki 是一款 AI 大模型驱动的**开源知识库搭建系统**，帮�
 本二开版本提供了与原版安装管理器类似的本地 `manager.sh`。把当前项目文件上传/拉取到服务器后，在项目根目录执行：
 
 ```bash
-bash manager.sh
+sudo bash manager.sh
 ```
 
 也可以直接执行安装命令：
 
 ```bash
-bash manager.sh install
+sudo bash manager.sh install
 ```
 
-首次安装会按原版风格自动生成后台密码、数据库密码、对象存储密码等生产配置；配置会写入 `deploy/production/.env`，安装完成后会在终端输出后台 `admin` 密码。根据命令提示的选项进行安装，构建和启动过程将会持续几分钟，请耐心等待。
+首次安装会按官方手动部署字段自动生成后台密码、数据库密码、对象存储密码等生产配置；配置会写入 `deploy/production/.env`，安装完成后会在终端输出后台 `admin` 密码。根据命令提示的选项进行安装，构建和启动过程将会持续几分钟，请耐心等待。
 
 > 关于本二开版本安装与部署的更多细节请参考 [生产 Docker 部署说明](docs/PRODUCTION_DOCKER_DEPLOYMENT.md)。
 
@@ -57,8 +57,8 @@ bash manager.sh install
 
 ```
 SUCCESS  控制台信息:
-SUCCESS    访问地址(内网): http://*.*.*.*:2443
-SUCCESS    访问地址(外网): http://*.*.*.*:2443
+SUCCESS    访问地址(内网): https://*.*.*.*:2443
+SUCCESS    访问地址(外网): https://*.*.*.*:2443
 SUCCESS    用户名: admin
 SUCCESS    密码: **********************
 ```
