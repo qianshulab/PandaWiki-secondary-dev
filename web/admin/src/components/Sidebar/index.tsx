@@ -105,7 +105,7 @@ const Sidebar = () => {
   useEffect(() => {
     const menu = menus.find(it => {
       if (it.value === '/') {
-        return pathname === '/';
+        return pathname === '/' || pathname === '/doc';
       }
       return pathname.startsWith(it.value);
     });
@@ -155,7 +155,7 @@ const Sidebar = () => {
         {menus.map(it => {
           let isActive = false;
           if (it.value === '/') {
-            isActive = pathname === '/';
+            isActive = pathname === '/' || pathname === '/doc';
           } else {
             isActive = pathname.includes(it.value);
           }

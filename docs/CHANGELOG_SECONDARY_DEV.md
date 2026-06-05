@@ -1,5 +1,30 @@
 ﻿# PandaWiki 二开版本迭代记录
 
+
+## 2026-06-05 - 全量回归与文档页别名修复
+
+### 变更内容
+
+- 新增生产环境全量回归脚本：`scripts/e2e/verify_full_regression.cjs`。
+- 修复 Admin 直访 `/doc` 时被误判为子路径 basename，导致接口走 `/doc/api/...`、版本短暂/持续显示“开源版”的问题：
+  - Admin 路由增加 `/doc` 文档页别名。
+  - 侧边栏把 `/doc` 识别为“文档”菜单。
+  - basename 解析白名单增加 `/doc`。
+- 回归脚本新增校验：
+  - Admin 登录、主导航、文档/统计/贡献/问答/反馈/发布/设置页加载。
+  - 专业版授权策略与必要功能开关。
+  - 自定义标题设置写入、Wiki 前台生效、再自动恢复。
+  - 安全设置、API Token、MCP Server、AI Prompt、高级机器人等专业版功能无遮罩。
+  - Wiki 站点无 Hydration/React 关键运行时错误。
+  - 官方文档/GitHub/微信群/Sentry 等官方外链无残留、无外发请求。
+
+### 验收命令
+
+- Admin 构建：`cd web/admin && pnpm build`
+- App 构建：`cd web/app && pnpm build`
+- 生产全量回归：`node scripts/e2e/verify_full_regression.cjs`
+- 官方外链专项回归：`node scripts/e2e/verify_no_official_links.cjs`
+
 ## 2026-06-05 - 官方/社区外链清理
 
 ### 变更内容

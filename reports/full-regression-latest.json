@@ -1,0 +1,260 @@
+{
+  "ok": true,
+  "generatedAt": "2026-06-05T00:16:57.056Z",
+  "adminUrl": "https://127.0.0.1:2443",
+  "wikiUrl": "http://127.0.0.1:8011/",
+  "checks": {
+    "knowledgeBase": {
+      "status": 200,
+      "selected": {
+        "id": "ddab4492-8481-47d5-906e-07ae8eff16d3",
+        "name": "sectest",
+        "ports": [
+          8011
+        ],
+        "hosts": [
+          "127.0.0.1"
+        ]
+      }
+    },
+    "license": {
+      "status": 200,
+      "success": true,
+      "edition": 1,
+      "state": 1,
+      "missingFlags": []
+    },
+    "appDetail": {
+      "status": 200,
+      "appId": "9c2623fa-88aa-40cf-80f5-160d0bef3371",
+      "settingsKeys": [
+        "lark_bot_settings",
+        "wechat_app_advanced_setting",
+        "wechat_service_contain_keywords",
+        "wechat_service_equal_keywords",
+        "wecom_ai_bot_settings",
+        "theme_and_style",
+        "catalog_settings",
+        "footer_settings",
+        "widget_bot_settings",
+        "web_app_comment_settings",
+        "ai_feedback_settings",
+        "web_app_custom_style",
+        "watermark_content",
+        "watermark_setting",
+        "copy_setting",
+        "contribute_settings",
+        "openai_api_bot_settings",
+        "disclaimer_settings",
+        "web_app_landing_theme",
+        "home_page_setting",
+        "conversation_setting",
+        "mcp_server_settings",
+        "stats_setting"
+      ]
+    },
+    "settingApplyUpdate": {
+      "status": 200,
+      "success": true,
+      "uniqueTitle": "PandaWiki Regression 1780618642956"
+    },
+    "settingApplyVisible": {
+      "status": 200,
+      "applied": true,
+      "wikiTitle": "PandaWiki Regression 1780618642956",
+      "textSample": "PandaWiki Regression 1780618642956\nCtrl+K\n智能问答\n​\n暂无文档, 请前往管理后台创建新文档\n本网站由 PandaWiki 提供技术支持"
+    },
+    "settingRestore": {
+      "status": 200,
+      "success": true
+    },
+    "wikiHome": {
+      "status": 200,
+      "title": "Panda-Wiki",
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "Ctrl+K\n智能问答\n​\n暂无文档, 请前往管理后台创建新文档\n本网站由 PandaWiki 提供技术支持"
+    }
+  },
+  "pages": [
+    {
+      "label": "admin.home",
+      "url": "https://127.0.0.1:2443/",
+      "finalUrl": "https://127.0.0.1:2443/",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n文档\n访问 WIKI 网站\n系统配置\n目录\n1 个 目录未发布，\n去发布\n搜索内容\n搜索内容\nsectest\n添加目录\n共 0 个文档\n创建文档\n暂无数据"
+    },
+    {
+      "label": "admin.docs",
+      "url": "https://127.0.0.1:2443/doc",
+      "finalUrl": "https://127.0.0.1:2443/doc",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n访问 WIKI 网站\n系统配置\n目录\n1 个 目录未发布，\n去发布\n搜索内容\n搜索内容\nsectest\n添加目录\n共 0 个文档\n创建文档\n暂无数据"
+    },
+    {
+      "label": "admin.stats",
+      "url": "https://127.0.0.1:2443/stat",
+      "finalUrl": "https://127.0.0.1:2443/stat",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n统计\n访问 WIKI 网站\n系统配置\n实时来访\n暂无数据\n近 24 小时\n近 7 天\n近 30 天\n近 90 天\n0\n访问次数\n1\n问答次数\n0\n访问用户数\n0\n来源 IP 数\n用户分布\n近 24 小时\n保留地址\n1\n问答来源\n1\nWiki 网站\n1\n来源域名\n近 24 小时\n暂无数据\n热门文档\n近 24 小时\n暂无数据\n客户端\n暂无数据"
+    },
+    {
+      "label": "admin.contribution",
+      "url": "https://127.0.0.1:2443/contribution",
+      "finalUrl": "https://127.0.0.1:2443/contribution",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n贡献\n访问 WIKI 网站\n系统配置\n文档\n文档\n用户\n用户\n文档\t更新说明\t用户\t来源 IP\t时间\t操作选项\n\n暂无数据"
+    },
+    {
+      "label": "admin.conversation",
+      "url": "https://127.0.0.1:2443/conversation",
+      "finalUrl": "https://127.0.0.1:2443/conversation",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n问答\n访问 WIKI 网站\n系统配置\n问题\n问题\n来源IP\n来源IP\n问题\t来源用户\t来源 IP\t问答时间\n\n你好\nWiki 网站\n\t\n匿名用户\n\t\n172.30.0.1\n保留地址\n\t\n9 小时前\n2026-06-04 23:05:22\n20\n​\n条每页, 共 1 条\n1\n跳至\n​\n/ 1 页"
+    },
+    {
+      "label": "admin.feedback",
+      "url": "https://127.0.0.1:2443/feedback",
+      "finalUrl": "https://127.0.0.1:2443/feedback",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n反馈\n访问 WIKI 网站\n系统配置\nAI 问答评价\n文档评论\n问题\t用户反馈\t来源用户\t来源 IP\t问答时间\n\n暂无数据"
+    },
+    {
+      "label": "admin.release",
+      "url": "https://127.0.0.1:2443/release",
+      "finalUrl": "https://127.0.0.1:2443/release",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n发布\n访问 WIKI 网站\n系统配置\n共0个历史版本\n发布新版本\n版本号\t备注\t发布者\t发布时间\n\n暂无数据"
+    },
+    {
+      "label": "settings.portal",
+      "url": "https://127.0.0.1:2443/setting?tab=portal-website",
+      "finalUrl": "https://127.0.0.1:2443/setting?tab=portal-website",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n访问 WIKI 网站\n系统配置\n门户网站\nAI 机器人\n问答设置\n反馈设置\n安全设置\n访问控制\nMCP 设置\n前台网站样式个性化\n默认首页\n文档页面\n欢迎页面\n自定义样式\n定制欢迎页面\n定制导航栏\n定制 Footer\n样式与风格\n页面宽度\n全屏\n超宽\n常规\n服务监听方式\n域名或 IP\n域名或 IP\n域名或 IP\n启用 HTTP\nHTTP 端口\nHTTP 端口\n启"
+    },
+    {
+      "label": "settings.robot",
+      "url": "https://127.0.0.1:2443/setting?tab=robot",
+      "finalUrl": "https://127.0.0.1:2443/setting?tab=robot",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n访问 WIKI 网站\n系统配置\n门户网站\nAI 机器人\n问答设置\n反馈设置\n安全设置\n访问控制\nMCP 设置\n网页挂件机器人\n网页挂件机器人\n启用\n禁用\n问答机器人 API\n问答机器人 API\n启用\n禁用\n钉钉机器人\n钉钉机器人\n启用\n禁用\n微信公众号\n微信公众号\n启用\n禁用\n企业微信机器人\n企业微信机器人\n启用\n禁用\n企业微信智能机器人\n企业微信智能机器人\n启"
+    },
+    {
+      "label": "settings.ai",
+      "url": "https://127.0.0.1:2443/setting?tab=ai-setting",
+      "finalUrl": "https://127.0.0.1:2443/setting?tab=ai-setting",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n访问 WIKI 网站\n系统配置\n门户网站\nAI 机器人\n问答设置\n反馈设置\n安全设置\n访问控制\nMCP 设置\n智能问答\n智能问答提示词\n自定义\n通用配置\n重置为默认提示词\n​\n智能摘要提示词\n重置为默认提示词\n​"
+    },
+    {
+      "label": "settings.security",
+      "url": "https://127.0.0.1:2443/setting?tab=security",
+      "finalUrl": "https://127.0.0.1:2443/setting?tab=security",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n访问 WIKI 网站\n系统配置\n门户网站\nAI 机器人\n问答设置\n反馈设置\n安全设置\n访问控制\nMCP 设置\n水印\n水印开关\n显性水印\n隐形水印\n禁用\n内容复制\n限制复制\n不做限制\n增加内容尾巴\n禁止复制内容\n内容合规\n屏蔽 AI 问答中的关键字\n​"
+    },
+    {
+      "label": "settings.access",
+      "url": "https://127.0.0.1:2443/setting?tab=backend-info",
+      "finalUrl": "https://127.0.0.1:2443/setting?tab=backend-info",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n访问 WIKI 网站\n系统配置\n门户网站\nAI 机器人\n问答设置\n反馈设置\n安全设置\n访问控制\nMCP 设置\nWiki 站管理员\n添加 WIKI 站管理员\nadmin\n完全控制\n​\nAPI Token\n创建 API Token\n暂无数据"
+    },
+    {
+      "label": "settings.mcp",
+      "url": "https://127.0.0.1:2443/setting?tab=mcp",
+      "finalUrl": "https://127.0.0.1:2443/setting?tab=mcp",
+      "status": 200,
+      "title": "PandaWiki",
+      "bizCount": 0,
+      "proMaskCount": 0,
+      "textHits": [],
+      "hrefHits": [],
+      "imgHits": [],
+      "textSample": "PandaWiki\n文档\n统计\n贡献\n问答\n反馈\n发布\n设置\n型号\n专业版\n版本\n2.11.1\nsectest\n​\n访问 WIKI 网站\n系统配置\n门户网站\nAI 机器人\n问答设置\n反馈设置\n安全设置\n访问控制\nMCP 设置\nMCP 设置\nMCP Server\n启用\n禁用"
+    }
+  ],
+  "screenshots": {
+    "security": "reports/full-regression-settings-security.png",
+    "mcp": "reports/full-regression-settings-mcp.png",
+    "wikiHome": "reports/full-regression-wiki-home.png",
+    "adminLast": "reports/full-regression-admin-last.png"
+  },
+  "failures": [],
+  "consoleErrors": [],
+  "officialRequests": []
+}

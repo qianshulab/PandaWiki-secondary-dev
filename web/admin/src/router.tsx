@@ -46,6 +46,12 @@ const router = [
         ),
       },
       {
+        path: '/doc',
+        element: createElement(
+          LazyLoadable(lazy(() => import('./pages/document/layout'))),
+        ),
+      },
+      {
         path: '/setting',
         element: createElement(
           LazyLoadable(lazy(() => import('./pages/setting'))),

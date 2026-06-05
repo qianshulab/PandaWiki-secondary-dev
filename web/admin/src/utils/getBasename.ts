@@ -86,6 +86,7 @@ export function getBasename(pathname: string): string {
     '/doc/editor/history/:id',
     '/doc/editor/:id',
     '/doc/editor/space',
+    '/doc',
     '/feedback/:tab?',
     '/doc/editor',
     '/setting',
