@@ -64,7 +64,7 @@ func (h *StatHandler) StatCount(c echo.Context) error {
 		return h.NewResponseWithError(c, "validation failed", err)
 	}
 
-	if err := h.usecase.ValidateStatDay(req.Day, consts.GetLicenseEdition(c)); err != nil {
+	if err := h.usecase.ValidateStatDay(c.Request().Context(), req.Day, consts.GetLicenseEdition(c)); err != nil {
 		h.logger.Error("validate stat day failed")
 		return h.NewResponseWithErrCode(c, domain.ErrCodePermissionDenied)
 	}
@@ -97,7 +97,7 @@ func (h *StatHandler) StatGeoCountReq(c echo.Context) error {
 		return h.NewResponseWithError(c, "validation failed", err)
 	}
 
-	if err := h.usecase.ValidateStatDay(req.Day, consts.GetLicenseEdition(c)); err != nil {
+	if err := h.usecase.ValidateStatDay(c.Request().Context(), req.Day, consts.GetLicenseEdition(c)); err != nil {
 		h.logger.Error("validate stat day failed")
 		return h.NewResponseWithErrCode(c, domain.ErrCodePermissionDenied)
 	}
@@ -130,7 +130,7 @@ func (h *StatHandler) StatConversationDistribution(c echo.Context) error {
 		return h.NewResponseWithError(c, "validation failed", err)
 	}
 
-	if err := h.usecase.ValidateStatDay(req.Day, consts.GetLicenseEdition(c)); err != nil {
+	if err := h.usecase.ValidateStatDay(c.Request().Context(), req.Day, consts.GetLicenseEdition(c)); err != nil {
 		h.logger.Error("validate stat day failed")
 		return h.NewResponseWithErrCode(c, domain.ErrCodePermissionDenied)
 	}
@@ -163,7 +163,7 @@ func (h *StatHandler) StatHotPages(c echo.Context) error {
 		return h.NewResponseWithError(c, "validation failed", err)
 	}
 
-	if err := h.usecase.ValidateStatDay(req.Day, consts.GetLicenseEdition(c)); err != nil {
+	if err := h.usecase.ValidateStatDay(c.Request().Context(), req.Day, consts.GetLicenseEdition(c)); err != nil {
 		return h.NewResponseWithError(c, err.Error(), err)
 	}
 
@@ -195,7 +195,7 @@ func (h *StatHandler) StatRefererHosts(c echo.Context) error {
 		return h.NewResponseWithError(c, "validation failed", err)
 	}
 
-	if err := h.usecase.ValidateStatDay(req.Day, consts.GetLicenseEdition(c)); err != nil {
+	if err := h.usecase.ValidateStatDay(c.Request().Context(), req.Day, consts.GetLicenseEdition(c)); err != nil {
 		return h.NewResponseWithError(c, err.Error(), err)
 	}
 
@@ -227,7 +227,7 @@ func (h *StatHandler) StatBrowsers(c echo.Context) error {
 		return h.NewResponseWithError(c, "validation failed", err)
 	}
 
-	if err := h.usecase.ValidateStatDay(req.Day, consts.GetLicenseEdition(c)); err != nil {
+	if err := h.usecase.ValidateStatDay(c.Request().Context(), req.Day, consts.GetLicenseEdition(c)); err != nil {
 		return h.NewResponseWithError(c, err.Error(), err)
 	}
 

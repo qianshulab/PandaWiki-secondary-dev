@@ -63,20 +63,22 @@ func (u *StatUseCase) RecordPage(ctx context.Context, stat *domain.StatPage) err
 	return nil
 }
 
-func (u *StatUseCase) ValidateStatDay(statDay consts.StatDay, edition consts.LicenseEdition) error {
+func (u *StatUseCase) ValidateStatDay(ctx context.Context, statDay consts.StatDay, edition consts.LicenseEdition) error {
+	allowNodeStats := domain.GetBaseEditionLimitation(ctx).AllowNodeStats
+
 	switch statDay {
 	case consts.StatDay1:
 		return nil
 	case consts.StatDay7:
-		if edition == consts.LicenseEditionFree {
-			return domain.ErrPermissionDenied
+		if allowNodeStats || edition != consts.LicenseEditionFree {
+			return nil
 		}
-		return nil
+		return domain.ErrPermissionDenied
 	case consts.StatDay30, consts.StatDay90:
-		if !slices.Contains([]consts.LicenseEdition{consts.LicenseEditionBusiness, consts.LicenseEditionEnterprise}, edition) {
-			return domain.ErrPermissionDenied
+		if allowNodeStats || slices.Contains([]consts.LicenseEdition{consts.LicenseEditionBusiness, consts.LicenseEditionEnterprise}, edition) {
+			return nil
 		}
-		return nil
+		return domain.ErrPermissionDenied
 	default:
 		u.logger.Error("stat day is invalid")
 		return domain.ErrPermissionDenied
