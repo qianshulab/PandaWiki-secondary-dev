@@ -1,5 +1,31 @@
-﻿# PandaWiki 二开版本迭代记录
+# PandaWiki 二开版本迭代记录
 
+## 2026-06-05 - 更新与回滚文档规范化
+
+### 变更内容
+
+- 新增 [二开版更新与回滚手册](SECONDARY_DEV_UPDATE_GUIDE.md)。
+- 明确二开版本升级入口为当前项目根目录 `manager.sh`，不要使用官方远程升级脚本覆盖二开部署。
+- 补充生产更新前检查、停机备份、快进拉取、重建启动、更新后验收、回滚和常见问题处理流程。
+- 更新 `README.md`、生产部署说明和绿联 NAS 部署指南中的更新文档入口。
+
+### 验证要求
+
+- 更新前必须备份 `deploy/production/.env`、`deploy/production/data/` 和当前 commit。
+- 更新后必须验证后台登录、Wiki 站点访问、模型配置、搜索 / 问答和关键二开功能。
+
+## 2026-06-05 - 统计长周期功能放开
+
+### 变更内容
+
+- 统计页近 7 天、近 30 天、近 90 天改为优先读取二开功能策略 `allow_node_stats`。
+- 二开默认 `allow_node_stats=true` 时，不再显示商业版可用标识，不再禁用近 30 天和近 90 天。
+- 后端统计接口同步按 `allow_node_stats` 放开长周期查询，并保留官方授权逻辑作为回退。
+
+### 验收命令
+
+- `cd backend && go test ./handler/v1 ./usecase`
+- `cd web/admin && pnpm build`
 
 ## 2026-06-05 - 全量回归与文档页别名修复
 
@@ -70,4 +96,3 @@
 - App 构建必须通过。
 - 生产容器需要重新构建 Admin/App 镜像后再验收页面，避免旧前端缓存残留。
 - 生产验收脚本：`scripts/e2e/verify_no_official_links.cjs`。
-

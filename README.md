@@ -3,8 +3,9 @@
 </p>
 
 <p align="center">
-  <a target="_blank" href="https://ly.safepoint.cloud/Br48PoX">📖 官方网站</a> &nbsp; | &nbsp;
-  <a target="_blank" href="/images/wechat.png">🙋‍♂️ 微信交流群</a>
+  <a href="docs/PRODUCTION_DOCKER_DEPLOYMENT.md">生产部署</a> &nbsp; | &nbsp;
+  <a href="docs/SECONDARY_DEV_UPDATE_GUIDE.md">更新与回滚</a> &nbsp; | &nbsp;
+  <a href="docs/CONFIGURATION_AND_USAGE_MANUAL.md">配置与使用</a>
 </p>
 
 ## 👋 项目介绍
@@ -49,7 +50,7 @@ sudo bash manager.sh install
 
 首次安装会按官方手动部署字段自动生成后台密码、数据库密码、对象存储密码等生产配置；配置会写入 `deploy/production/.env`，安装完成后会在终端输出后台 `admin` 密码。根据命令提示的选项进行安装，构建和启动过程将会持续几分钟，请耐心等待。
 
-> 关于本二开版本安装与部署的更多细节请参考 [生产 Docker 部署说明](docs/PRODUCTION_DOCKER_DEPLOYMENT.md)。
+> 关于本二开版本安装与部署的更多细节请参考 [生产 Docker 部署说明](docs/PRODUCTION_DOCKER_DEPLOYMENT.md)。后续升级、备份和回滚请参考 [二开版更新与回滚手册](docs/SECONDARY_DEV_UPDATE_GUIDE.md)。
 
 ### 登录 PandaWiki
 
@@ -97,23 +98,12 @@ SUCCESS    密码: **********************
 - 访问 **Wiki 网站** 使用知识库并测试AI问答效果
 <img src="/images/AI-QA.png" width="700" />
 
-### 💬 遇到问题
+### 💬 运维文档
 
-如在使用产品过程中遇到问题，可通过以下方式获取帮助：
-- 📘查阅官方文档：[常见问题](https://pandawiki.docs.baizhi.cloud/node/019b4952-4ed3-7514-ba57-c93a8ca13608)，更多内容请参考文档目录。
-- 🤖不想翻文档？试试 [AI 问答](https://pandawiki.docs.baizhi.cloud/node/0197160c-782c-74ad-a4b7-857dae148f84)，快速获取答案。
-- 🤝加入社区：扫码加入下方企业微信群，与更多用户及官方人员交流经验、获得帮助。
-
-
-## 社区交流
-
-欢迎加入我们的微信群进行交流。
-
-<img src="/images/wechat.png" width="300" />
-
-## 🙋‍♂️ 贡献
-
-欢迎提交 [Pull Request](https://github.com/chaitin/PandaWiki/pulls) 或创建 [Issue](https://github.com/chaitin/PandaWiki/issues) 来帮助改进项目。
+- [生产 Docker 部署说明](docs/PRODUCTION_DOCKER_DEPLOYMENT.md)
+- [二开版更新与回滚手册](docs/SECONDARY_DEV_UPDATE_GUIDE.md)
+- [绿联 NAS 部署指南](docs/UGREEN_NAS_DEPLOYMENT.md)
+- [配置与使用手册](docs/CONFIGURATION_AND_USAGE_MANUAL.md)
 
 ## 📝 许可证
 

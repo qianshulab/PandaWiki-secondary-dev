@@ -145,6 +145,8 @@ docker compose restart api
 docker compose down
 ```
 
+生产环境的标准更新、备份、验收和回滚流程请以 [二开版更新与回滚手册](SECONDARY_DEV_UPDATE_GUIDE.md) 为准。常规更新不要重新生成 `.env`，不要执行 `docker compose down -v`。
+
 ## 7. 验收检查
 
 ```bash

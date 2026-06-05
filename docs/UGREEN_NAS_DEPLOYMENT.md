@@ -290,21 +290,25 @@ tar -czf /volume1/docker/pandawiki-backups/data.$(date +%Y%m%d-%H%M%S).tar.gz -C
 
 ## 8. 更新流程
 
+绿联 NAS 环境的更新流程与普通 Linux 生产部署一致，完整规范见 [二开版更新与回滚手册](SECONDARY_DEV_UPDATE_GUIDE.md)。NAS 上建议使用 SSH 执行更新，不建议通过图形界面逐个容器更新。
+
 ### 8.1 更新前必须备份
 
 ```bash
 cd /volume1/docker/pandawiki
-sudo bash manager.sh stop
 mkdir -p /volume1/docker/pandawiki-backups
+git rev-parse HEAD > /volume1/docker/pandawiki-backups/git-commit.before-update.$(date +%Y%m%d-%H%M%S).txt
+sudo bash manager.sh stop
 cp deploy/production/.env /volume1/docker/pandawiki-backups/.env.before-update.$(date +%Y%m%d-%H%M%S)
 tar -czf /volume1/docker/pandawiki-backups/data.before-update.$(date +%Y%m%d-%H%M%S).tar.gz -C deploy/production data
-git rev-parse HEAD > /volume1/docker/pandawiki-backups/git-commit.before-update.$(date +%Y%m%d-%H%M%S).txt
 ```
 
 ### 8.2 拉取新版本
 
 ```bash
-git pull origin secondary-dev-analysis
+git fetch origin secondary-dev-analysis
+git merge --ff-only FETCH_HEAD
+git rev-parse --short HEAD
 ```
 
 ### 8.3 重建并启动
@@ -313,7 +317,7 @@ git pull origin secondary-dev-analysis
 sudo bash manager.sh install
 ```
 
-或：
+已完成备份且工作区干净时，也可以直接使用菜单式更新：
 
 ```bash
 sudo bash manager.sh update
@@ -339,6 +343,7 @@ https://NAS-IP:2443
 - Wiki 站点可访问；
 - 模型配置仍在；
 - 文档导入 / 搜索 / 问答功能正常。
+- 统计页、MCP Server、OpenAI 兼容问答 API、API Token、页面水印等二开功能按需验证。
 
 ---
 
