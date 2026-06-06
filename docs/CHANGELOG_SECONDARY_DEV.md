@@ -1,6 +1,18 @@
 # PandaWiki 二开版本迭代记录
 
 
+## 2026-06-06 - 生产后台刷新异常修复
+
+### 变更内容
+
+- 修复 Admin 生产镜像中构建产物权限过窄，导致 Nginx worker 读取 `/panda-wiki.css`、`/logo.png`、`/echarts/*` 等静态资源时返回 `403 Forbidden` 的问题。
+- 修复统计、问答反馈、会话列表等页面读取访问 IP 归属地时，`ip2region` 查询在特定公网 IP 上 panic，进而导致后台接口返回 `502 Bad Gateway` 的问题。
+- IP 归属地查询增加串行保护与 panic 兜底，异常 IP 只降级为“未知地址”，不再影响业务接口。
+
+### 验收命令
+
+- `cd backend && go test ./store/ipdb ./repo/ipdb ./usecase ./handler/v1 ./repo/pg`
+
 ## 2026-06-05 - Wiki 默认问题触发问答修复
 
 ### 变更内容

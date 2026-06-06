@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/lionsoul2014/ip2region/binding/golang/xdb"
 
@@ -18,6 +19,7 @@ var ipdbFiles embed.FS
 type IPDB struct {
 	searcher *xdb.Searcher
 	logger   *log.Logger
+	mu       sync.Mutex
 }
 
 func NewIPDB(config *config.Config, logger *log.Logger) (*IPDB, error) {
@@ -33,7 +35,7 @@ func NewIPDB(config *config.Config, logger *log.Logger) (*IPDB, error) {
 }
 
 func (a *IPDB) Lookup(ip string) (*domain.IPAddress, error) {
-	region, err := a.searcher.SearchByStr(ip)
+	region, err := a.search(ip)
 	if err != nil {
 		return nil, fmt.Errorf("search ip failed: %w", err)
 	}
@@ -59,4 +61,20 @@ func (a *IPDB) Lookup(ip string) (*domain.IPAddress, error) {
 		Province: province,
 		City:     city,
 	}, nil
+}
+
+func (a *IPDB) search(ip string) (region string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("ipdb lookup panic: %v", r)
+		}
+	}()
+
+	// ip2region searcher keeps internal offsets while searching. Guard access
+	// and recover from malformed/edge-case records so statistics/conversation
+	// pages never fail because of geo lookup.
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	return a.searcher.SearchByStr(ip)
 }

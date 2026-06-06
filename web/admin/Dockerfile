@@ -20,5 +20,9 @@ COPY admin/server.conf /etc/nginx/conf.d/server.conf
 COPY admin/nginx.conf /etc/nginx/nginx.conf
 COPY admin/ssl /etc/nginx/ssl
 
+RUN chown -R nginx:nginx /opt/frontend/dist \
+    && find /opt/frontend/dist -type d -exec chmod 755 {} + \
+    && find /opt/frontend/dist -type f -exec chmod 644 {} +
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
