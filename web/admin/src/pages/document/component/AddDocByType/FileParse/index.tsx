@@ -6,11 +6,13 @@ import {
 } from '@/request';
 import { useAppSelector } from '@/store';
 import { formatByte } from '@/utils';
+import { message } from '@ctzhian/ui';
 import { alpha, Box, CircularProgress, Stack, useTheme } from '@mui/material';
 import { useCallback, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { ListDataItem } from '..';
 import { NoParseTypes, TYPE_CONFIG } from '../constants';
+import { isMarkdownZipFile, parseMarkdownZipFile } from '../markdownZip';
 import { flattenCrawlerParseResponse } from '../util';
 
 interface FileParseProps {
@@ -33,18 +35,56 @@ const FileParse = ({ type, parent_id, setData }: FileParseProps) => {
   const handleInitFiles = useCallback(
     async (uploadFiles: File[]) => {
       if (NoParseTypes.includes(type)) {
-        const newFileList: ListDataItem[] = uploadFiles.map(file => ({
-          uuid: uuidv4(),
-          title: file.name,
-          summary: formatByte(file.size),
-          fileData: file,
-          file: true,
-          open: false,
-          progress: 0,
-          parent_id: parent_id || '',
-          status: 'common' as const,
-        }));
+        setFileList(uploadFiles);
+        setLoading(true);
+        setProgress(0);
+
+        const newFileList: ListDataItem[] = [];
+
+        for (const [index, file] of uploadFiles.entries()) {
+          try {
+            if (
+              type === ConstsCrawlerSource.CrawlerSourceFile &&
+              isMarkdownZipFile(file)
+            ) {
+              const markdownZipItems = await parseMarkdownZipFile(file, {
+                parentId: parent_id,
+                uploadAttachment: async attachment => {
+                  const resp = await postApiV1FileUpload({
+                    file: attachment,
+                    kb_id,
+                  });
+
+                  return `/static-file/${resp.key}`;
+                },
+              });
+              newFileList.push(...markdownZipItems);
+            } else {
+              newFileList.push({
+                uuid: uuidv4(),
+                title: file.name,
+                summary: formatByte(file.size),
+                fileData: file,
+                file: true,
+                open: false,
+                progress: 0,
+                parent_id: parent_id || '',
+                status: 'common' as const,
+              });
+            }
+          } catch (error) {
+            message.error(
+              `${file.name} 解析失败：${
+                error instanceof Error ? error.message : '操作失败，请稍后重试'
+              }`,
+            );
+          } finally {
+            setProgress(Math.round(((index + 1) / uploadFiles.length) * 100));
+          }
+        }
+
         setData(newFileList);
+        setLoading(false);
       } else {
         setFileList(uploadFiles);
         setLoading(true);
@@ -68,9 +108,10 @@ const FileParse = ({ type, parent_id, setData }: FileParseProps) => {
         });
         const flattenedData = flattenCrawlerParseResponse(parseResp, parent_id);
         setData(prev => [...prev, ...flattenedData]);
+        setLoading(false);
       }
     },
-    [type, parent_id],
+    [type, parent_id, kb_id],
   );
 
   return (

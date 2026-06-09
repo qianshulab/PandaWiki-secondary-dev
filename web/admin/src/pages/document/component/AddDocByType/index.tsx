@@ -30,6 +30,8 @@ export interface ListDataItem {
 
   title?: string;
   summary?: string;
+  content?: string;
+  content_type?: string;
   file_type?: string;
   file?: boolean;
   fileData?: File;

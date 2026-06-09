@@ -126,6 +126,20 @@ FEATURE_POLICY_ALLOW_VISITOR_PERMISSION_CONTROL=true
 | OpenAI API Bot | Admin 机器人/API 设置 |
 | MCP Server | Admin MCP Server 设置 + `/mcp` 接口 |
 
+### 4.0 Markdown 附件压缩包导入
+
+后台进入“文档 / 导入文档 / 通过离线文件导入”，可上传 `.zip` 格式的 Markdown 附件压缩包。压缩包中可以包含 Markdown 文件和图片/附件目录，例如：
+
+```text
+文档包.zip
+├── iOS端frida工具配置优化.md
+└── assets/
+    ├── 截图 1.png
+    └── 配置示例.jpg
+```
+
+导入时会自动读取 Markdown，上传被 Markdown 引用的本地附件，并将相对路径替换为 `/static-file/...` 地址。中文文件名和中文目录名可正常处理。
+
 ### 4.1 发布后访问 Wiki 站点
 
 文档发布后，Wiki 站点由前台 `web/app` 提供访问。生产链路为 Caddy/反向代理按知识库 host/port 注入 `X-KB-ID` 后转发到 `web/app`；本地预览使用 fake Caddy 模拟这条链路。

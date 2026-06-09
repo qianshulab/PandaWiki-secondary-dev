@@ -66,7 +66,8 @@ export const TYPE_CONFIG: Record<
   [ConstsCrawlerSource.CrawlerSourceFile]: {
     label: '通过离线文件导入',
     okText: '导入文件',
-    accept: '.txt, .md, .xls, .xlsx, .docx, .pdf, .html, .pptx',
+    accept:
+      '.txt, .md, .markdown, .xls, .xlsx, .docx, .pdf, .html, .pptx, .zip',
   },
   [ConstsCrawlerSource.CrawlerSourceUrl]: {
     label: '通过 URL 导入',

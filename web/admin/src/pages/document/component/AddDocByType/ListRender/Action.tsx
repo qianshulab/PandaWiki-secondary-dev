@@ -201,7 +201,27 @@ const BatchActionBar = (props: BatchActionBarProps) => {
             actualParentId = parent_id || undefined;
           }
 
-          if (!item.file) {
+          if (item.content !== undefined) {
+            const nodeResp = await postApiV1Node({
+              name: item.title!,
+              content: item.content,
+              content_type:
+                item.content_type ||
+                (item.file_type === 'md' ? 'md' : undefined),
+              parent_id: actualParentId,
+              type: 2, // 文件类型
+              kb_id,
+              nav_id: nav_id || '',
+            });
+
+            setData(prev =>
+              prev.map(prevItem =>
+                prevItem.uuid === item.uuid
+                  ? { ...prevItem, status: 'imported', id: nodeResp.id }
+                  : prevItem,
+              ),
+            );
+          } else if (!item.file) {
             const nodeResp = await postApiV1Node({
               name: item.title!,
               content: '',
