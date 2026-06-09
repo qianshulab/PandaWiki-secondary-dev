@@ -224,5 +224,9 @@ export const config = {
     '/:basePath/node/:path*',
     '/node',
     '/:basePath/node',
+    '/editor/:path*',
+    '/:basePath/editor/:path*',
+    '/editor',
+    '/:basePath/editor',
   ],
 };
