@@ -41,7 +41,7 @@ const DocPage = async ({ params }: PageProps) => {
   } catch (err) {
     error = err;
   }
-  return <Doc node={node ?? undefined} error={error as Error} />;
+  return <Doc node={node ?? undefined} nodeId={id} error={error as Error} />;
 };
 
 export default DocPage;

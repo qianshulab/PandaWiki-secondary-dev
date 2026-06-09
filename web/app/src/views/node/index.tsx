@@ -18,9 +18,11 @@ import DocContent from './DocContent';
 
 const Doc = ({
   node,
+  nodeId,
   error,
 }: {
   node?: any;
+  nodeId?: string;
   error?: Partial<Error> & { digest?: string } & { code?: number | string };
 }) => {
   const { kbDetail, mobile, catalogWidth } = useStore();
@@ -119,7 +121,7 @@ const Doc = ({
             />
           )}
           {!mobile && <DocAnchor headings={headings} />}
-          <DocFab docId={node?.id} />
+          <DocFab docId={nodeId} />
           {!mobile && <ScrollToTopFab />}
         </>
       )}

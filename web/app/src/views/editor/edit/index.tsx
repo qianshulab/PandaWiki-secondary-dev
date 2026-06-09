@@ -1,4 +1,5 @@
 'use client';
+import ErrorComponent from '@/components/error';
 import { getShareV1NodeDetail } from '@/request/ShareNode';
 import { V1NodeDetailResp } from '@/request/types';
 import { Box } from '@mui/material';
@@ -13,9 +14,13 @@ const Edit = () => {
   const { setNodeDetail, nodeDetail } = useWrapContext();
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<V1NodeDetailResp | null>(nodeDetail);
+  const [error, setError] = useState<
+    (Partial<Error> & { code?: number | string }) | null
+  >(null);
 
   const getDetail = () => {
     setLoading(true);
+    setError(null);
     // @ts-expect-error 类型错误
     getShareV1NodeDetail({
       id: id[0] as string,
@@ -26,6 +31,9 @@ const Edit = () => {
         setTimeout(() => {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }, 0);
+      })
+      .catch(err => {
+        setError(err as Partial<Error> & { code?: number | string });
       })
       .finally(() => {
         setLoading(false);
@@ -72,7 +80,13 @@ const Edit = () => {
         },
       }}
     >
-      {loading ? <LoadingEditorWrap /> : <EditorWrap detail={detail!} />}
+      {loading ? (
+        <LoadingEditorWrap />
+      ) : error ? (
+        <ErrorComponent error={error} />
+      ) : (
+        <EditorWrap detail={detail!} />
+      )}
     </Box>
   );
 };
