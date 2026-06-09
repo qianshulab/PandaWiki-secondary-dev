@@ -2,6 +2,7 @@ import { putApiV1KnowledgeBaseDetail } from '@/request/KnowledgeBase';
 import { DomainKnowledgeBaseDetail } from '@/request/types';
 import { FormItem, SettingCardItem } from './Common';
 import { validateUrl } from '@/utils';
+import { buildListenWikiUrl } from '@/utils/wikiUrl';
 import { TextField } from '@mui/material';
 import { message } from '@ctzhian/ui';
 import { useEffect, useState } from 'react';
@@ -18,13 +19,15 @@ const CardBasicInfo = ({
 
   const handleSave = () => {
     try {
-      if (!validateUrl(url) && url.trim() !== '') {
+      const normalizedUrl = url.trim();
+
+      if (!validateUrl(normalizedUrl) && normalizedUrl !== '') {
         throw new Error('请输入正确的网址');
       }
 
       putApiV1KnowledgeBaseDetail({
         id: kb.id!,
-        access_settings: { ...kb.access_settings, base_url: url },
+        access_settings: { ...kb.access_settings, base_url: normalizedUrl },
       }).then(() => {
         message.success('保存成功');
         setIsEdit(false);
@@ -41,36 +44,15 @@ const CardBasicInfo = ({
   }, [kb]);
 
   const baseUrlPlaceholder = () => {
-    const host = kb.access_settings?.hosts?.[0] || '';
-    if (!host) {
-      return;
-    }
-
-    if (
-      kb.access_settings?.ssl_ports &&
-      kb.access_settings.ssl_ports.length > 0
-    ) {
-      return kb.access_settings.ssl_ports.includes(443)
-        ? `https://${host}`
-        : `https://${host}:${kb.access_settings.ssl_ports[0]}`;
-    } else if (
-      kb.access_settings?.ports &&
-      kb.access_settings.ports.length > 0
-    ) {
-      return kb.access_settings.ports.includes(80)
-        ? `http://${host}`
-        : `http://${host}:${kb.access_settings.ports[0]}`;
-    } else {
-      return '';
-    }
+    return buildListenWikiUrl(kb.access_settings);
   };
 
   return (
     <SettingCardItem title='网站基本信息' isEdit={isEdit} onSubmit={handleSave}>
-      <FormItem label='网址绝对路径前缀'>
+      <FormItem label='外网 Wiki 访问域名'>
         <TextField
           fullWidth
-          label='网址绝对路径前缀'
+          label='外网 Wiki 访问域名'
           value={url}
           onChange={e => {
             setUrl(e.target.value);
@@ -82,6 +64,7 @@ const CardBasicInfo = ({
             }
           }}
           placeholder={baseUrlPlaceholder()}
+          helperText='后台通过域名访问时，“访问 Wiki 网站”优先打开此地址；后台通过内网 IP 访问时仍打开服务监听地址。'
         />
       </FormItem>
     </SettingCardItem>

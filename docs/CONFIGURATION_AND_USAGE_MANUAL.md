@@ -132,7 +132,7 @@ FEATURE_POLICY_ALLOW_VISITOR_PERMISSION_CONTROL=true
 
 - 本地直连预览：`http://127.0.0.1:3010/node`，用于默认演示知识库。
 - 本地 Caddy 链路预览：访问知识库配置的 host/port，例如 `http://127.0.0.1:18081`；该方式最接近生产访问。
-- 生产环境：访问知识库配置的正式域名/端口；如果配置了 `base_url`，以该地址为准。
+- 生产环境：访问知识库配置的正式域名/端口；如后台通过公网域名访问，可在“门户网站 / 网站基本信息 / 外网 Wiki 访问域名”中配置公网 Wiki 地址。
 
 在 Admin 中发布文档后，打开上面的 Wiki 地址即可看到已发布内容。访问 `/node` 会自动跳转到当前知识库的首篇可访问文档；单篇文档地址格式为：
 
@@ -140,7 +140,12 @@ FEATURE_POLICY_ALLOW_VISITOR_PERMISSION_CONTROL=true
 http://<wiki-domain>/node/<node_id>
 ```
 
-Admin 顶部“访问 Wiki 网站”按钮读取知识库 `access_settings.base_url`。本地预览脚本会自动把演示知识库的该值设置为 `http://127.0.0.1:3010`，所以演示知识库从后台点击访问 Wiki 时会跳转到 3010 直连预览。若手工创建/修改知识库并配置了独立 host/port，则应把 `base_url` 设置为该 host/port，fake Caddy 会监听对应端口并注入正确 `X-KB-ID`，从而避免所有知识库都落到 `DEV_KB_ID` 的直连预览。
+Admin 顶部“访问 Wiki 网站”按钮按后台访问方式选择跳转地址：
+
+- 后台通过域名访问：优先打开“外网 Wiki 访问域名”（知识库 `access_settings.base_url`）。
+- 后台通过内网 IP、localhost 或 IPv6 地址访问：继续按服务监听的 host/port 生成内网访问地址。
+
+“外网 Wiki 访问域名”只影响后台按钮跳转地址，不改变服务监听方式、端口、证书和反向代理配置。若手工创建/修改知识库并配置了独立 host/port，内网访问后台时仍会打开该 host/port。
 
 如果后台修改设置后前台未体现，先确认访问的是该知识库自己的 Caddy/base_url 地址，而不是固定的 3010 直连默认预览；固定 3010 在本地开发中只适合默认演示知识库。
 
