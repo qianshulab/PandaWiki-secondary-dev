@@ -597,6 +597,12 @@ const AiQaContent: React.FC<{
   const isFeedbackEnabled =
     // @ts-ignore
     kbDetail?.settings?.ai_feedback_settings?.is_enabled ?? true;
+  const answerCopyrightContent = kbDetail?.settings?.conversation_setting
+    ?.copyright_hide_enabled
+    ? ''
+    : kbDetail?.settings?.conversation_setting?.copyright_info ||
+      kbDetail?.settings?.disclaimer_settings?.content ||
+      '';
 
   useEffect(() => {
     const question = pendingQaQuestion?.trim();
@@ -1077,9 +1083,9 @@ const AiQaContent: React.FC<{
                         </>
                       )}
                     </Stack>
-                    <Box>
-                      {kbDetail?.settings?.disclaimer_settings?.content}
-                    </Box>
+                    {!!answerCopyrightContent && (
+                      <Box>{answerCopyrightContent}</Box>
+                    )}
                   </StyledActionStack>
                 )}
               </StyledAiBubble>

@@ -250,9 +250,13 @@ const H5Chat = () => {
   }, [appSetting]);
 
   const disclaimerContent = useMemo(() => {
+    if (kbDetail?.settings?.conversation_setting?.copyright_hide_enabled) {
+      return '';
+    }
     return (
-      appSetting?.disclaimer_content ??
-      kbDetail?.settings?.disclaimer_settings?.content ??
+      kbDetail?.settings?.conversation_setting?.copyright_info ||
+      appSetting?.disclaimer_content ||
+      kbDetail?.settings?.disclaimer_settings?.content ||
       ''
     );
   }, [appSetting, kbDetail]);

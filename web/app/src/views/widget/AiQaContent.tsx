@@ -158,6 +158,12 @@ const AiQaContent: React.FC<{
     container: '.conversation-container',
     behavior: 'smooth',
   });
+  const widgetBotSettings = widget?.settings?.widget_bot_settings;
+  const answerCopyrightContent = widgetBotSettings?.copyright_hide_enabled
+    ? ''
+    : widgetBotSettings?.copyright_info ||
+      widgetBotSettings?.disclaimer ||
+      '本回答由 PandaWiki AI 自动生成，仅供参考。';
 
   const onReset = () => {
     if (loading) {
@@ -935,10 +941,9 @@ const AiQaContent: React.FC<{
                         </>
                       )}
                     </Stack>
-                    <Box>
-                      {widget?.settings?.widget_bot_settings?.disclaimer ||
-                        '本回答由 PandaWiki AI 自动生成，仅供参考。'}
-                    </Box>
+                    {!!answerCopyrightContent && (
+                      <Box>{answerCopyrightContent}</Box>
+                    )}
                   </StyledActionStack>
                 )}
               </StyledAiBubble>
